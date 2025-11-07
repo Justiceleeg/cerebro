@@ -1,0 +1,26 @@
+## 1. Implementation
+- [ ] 1.1 Build `ScenarioLoader` class (minimal)
+  - Create `/lib/scenarios/scenario-loader.ts`
+  - Load scenario definitions from `config/scenario-definitions.json`
+  - Provide lookup by scenario ID
+  - Return scenario metadata for one scenario
+- [ ] 1.2 Build `ScenarioEngine` class (minimal)
+  - Create `/lib/scenarios/scenario-engine.ts`
+  - Track active scenario state
+  - Apply scenario modifiers (just store them, don't apply to generation yet)
+  - Inject external events (just store them)
+  - Update `SimulationState`
+- [ ] 1.3 Build `POST /api/simulation/scenario` endpoint
+  - Create `/routes/api/simulation/scenario/+server.ts`
+  - Accept: `{ scenarioId: string }`
+  - Load scenario by ID
+  - Activate scenario (store in state)
+  - Return: `{ success: boolean, scenario: ScenarioModifier, events: ExternalEvent[] }`
+- [ ] 1.4 Update `GET /api/simulation/state` endpoint
+  - Return actual state from `ScenarioEngine`
+  - Include active modifiers and events
+- [ ] 1.5 Test endpoints
+  - Test: `curl -X POST http://localhost:5173/api/simulation/scenario -d '{"scenarioId":"exam-season-surge"}'`
+  - Test: `curl http://localhost:5173/api/simulation/state`
+  - Verify: State reflects active scenario
+
