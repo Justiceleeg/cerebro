@@ -100,75 +100,78 @@ Building the backend mock data generation service that simulates 50+ marketplace
 ### Slice 1: Minimal Testable API (Day 2)
 **Goal**: Create a simple API endpoint that returns typed data - verify types work end-to-end.
 
-- [ ] Build `GET /api/simulation/state` endpoint
+- [x] Build `GET /api/simulation/state` endpoint
   - Return hardcoded `SimulationState` object
   - Use types from `$lib/types`
   - Test: `curl http://localhost:5173/api/simulation/state`
   - Verify: Response matches `SimulationState` interface
   - **Testable**: ✅ Can test immediately with HTTP request
+  - **Status**: ✅ Complete - Deployed and tested on Railway
 
 ---
 
 ### Slice 2: Single Stream Event Generation (Day 2-3)
 **Goal**: Generate one stream event and expose it via API - verify stream generation works.
 
-- [ ] Build minimal `StreamGenerator` class
+- [x] Build minimal `StreamGenerator` class
   - Generate one `customer.tutor.search` event
   - Use types from `$lib/types` (specifically `CustomerTutorSearchData`)
   - Apply baseline metrics from config for this one stream
   - Return typed `StreamEvent` object
   
-- [ ] Build normalization function (minimal)
+- [x] Build normalization function (minimal)
   - Input: raw stream value + hardcoded baseline stats for one stream
   - Output: normalized 0-100 score
   - Returns anomaly flag ('normal', 'warning', 'critical')
   
-- [ ] Build `GET /api/simulation/events` endpoint
+- [x] Build `GET /api/simulation/events` endpoint
   - Generate one event using `StreamGenerator`
   - Return single `StreamEvent` in response
   - Test: `curl http://localhost:5173/api/simulation/events`
   - Verify: Event has correct structure, types are enforced
   - **Testable**: ✅ Can test immediately with HTTP request
+  - **Status**: ✅ Complete - Deployed and tested on Railway
 
 ---
 
 ### Slice 3: Historical Data (Minimal) (Day 3)
 **Goal**: Generate 1 day of historical data for 1 stream and expose via API.
 
-- [ ] Build minimal `generateBaselineHistory()` function
+- [x] Build minimal `generateBaselineHistory()` function
   - Generate 1 day × 2 intervals (12-hour blocks) = 2 data points for `customer.tutor.search`
   - Apply basic patterns (weekday/weekend variance)
   - Return array of `StreamEvent` objects
   
-- [ ] Build minimal baseline statistics calculator
+- [x] Build minimal baseline statistics calculator
   - Calculate mean, median, std dev for the 2 data points
   - Return `StreamBaseline` for one stream
   
-- [ ] Build `GET /api/simulation/history` endpoint
+- [x] Build `GET /api/simulation/history` endpoint
   - Parameters: `start`, `end`, `streams` (optional, defaults to `customer.tutor.search`)
   - Generate historical data on-demand
   - Return data in format suitable for charting
   - Test: `curl "http://localhost:5173/api/simulation/history?start=2025-01-15T00:00:00Z&end=2025-01-16T00:00:00Z"`
   - Verify: Historical data has correct structure
   - **Testable**: ✅ Can test immediately with HTTP request
+  - **Status**: ✅ Complete - Deployed and tested on Railway
 
 ---
 
 ### Slice 4: Scenario Activation (Minimal) (Day 3-4)
 **Goal**: Load one scenario, activate it, and see state change via API.
 
-- [ ] Build `ScenarioLoader` class (minimal)
+- [x] Build `ScenarioLoader` class (minimal)
   - Load scenario definitions from `config/scenario-definitions.json`
   - Provide lookup by scenario ID
   - Return scenario metadata for one scenario
   
-- [ ] Build `ScenarioEngine` class (minimal)
+- [x] Build `ScenarioEngine` class (minimal)
   - Track active scenario state
   - Apply scenario modifiers (just store them, don't apply to generation yet)
   - Inject external events (just store them)
   - Update `SimulationState`
   
-- [ ] Build `POST /api/simulation/scenario` endpoint
+- [x] Build `POST /api/simulation/scenario` endpoint
   - Accept: `{ scenarioId: string }`
   - Load scenario by ID
   - Activate scenario (store in state)
@@ -177,49 +180,52 @@ Building the backend mock data generation service that simulates 50+ marketplace
   - Verify: State endpoint shows active scenario
   - **Testable**: ✅ Can test immediately with HTTP requests
 
-- [ ] Update `GET /api/simulation/state` endpoint
+- [x] Update `GET /api/simulation/state` endpoint
   - Return actual state from `ScenarioEngine`
   - Include active modifiers and events
   - Test: Verify state reflects active scenario
   - **Testable**: ✅ Can test immediately with HTTP request
+  - **Status**: ✅ Complete - Deployed and tested on Railway
 
 ---
 
 ### Slice 5: Real-time Streaming (Minimal) (Day 4)
 **Goal**: WebSocket that sends one stream event every 5 seconds.
 
-- [ ] Set up WebSocket server in SvelteKit hooks (`src/hooks.server.ts`)
+- [x] Set up WebSocket server in SvelteKit hooks (`src/hooks.server.ts`)
   - Handle WebSocket upgrade requests
   - Track connected clients
   
-- [ ] Implement minimal WebSocket handler
+- [x] Implement minimal WebSocket handler
   - Accept connections
   - Send one `customer.tutor.search` event every 5 seconds
   - Use `StreamGenerator` from Slice 2
   - Message format: `{ type: "event", data: StreamEvent }`
   
-- [ ] Test WebSocket connection
+- [x] Test WebSocket connection
   - Connect: `wscat -c ws://localhost:5173/ws`
   - Verify: Receive events every 5 seconds
   - Verify: Event structure matches `StreamEvent` type
   - **Testable**: ✅ Can test immediately with WebSocket client
+  - **Status**: ✅ Complete - Deployed and tested on Railway (wss://cerebro-production-3075.up.railway.app/ws)
 
 ---
 
 ### Slice 6: Apply Scenario to Stream Generation (Day 4-5)
 **Goal**: Active scenarios actually modify stream generation.
 
-- [ ] Integrate `ScenarioEngine` with `StreamGenerator`
+- [x] Integrate `ScenarioEngine` with `StreamGenerator`
   - When generating events, check for active scenario modifiers
   - Apply multipliers/overrides to stream generation
   - Test: Activate scenario, generate events, verify values are modified
   - **Testable**: ✅ Can test via API + WebSocket
 
-- [ ] Apply external event impacts
+- [x] Apply external event impacts
   - Check if external events are active
   - Apply event impacts to stream generation
   - Test: Activate scenario with events, verify impacts
   - **Testable**: ✅ Can test via API + WebSocket
+  - **Status**: ✅ Complete - Deployed and tested on Railway (verified scenario modifiers apply correctly)
 
 ---
 
