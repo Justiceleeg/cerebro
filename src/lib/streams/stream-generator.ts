@@ -5,10 +5,12 @@ import {
 	normalizeStreamValue,
 	getBaselineStatsForCustomerTutorSearch
 } from './normalize.js';
+import { getScenarioEngine } from '$lib/scenarios/scenario-engine.js';
 
 /**
  * Minimal StreamGenerator class
  * Generates stream events using baseline metrics from configuration
+ * Applies active scenario modifiers and external event impacts
  */
 export class StreamGenerator {
 	/**
@@ -32,9 +34,40 @@ export class StreamGenerator {
 		const eventsPerDay = streamBaseline?.eventsPerDay || 8000;
 
 		// Calculate raw value (events per day as a simple metric)
-		// For now, use the baseline value with some variance
+		// Start with baseline value with some variance
 		const variance = (Math.random() - 0.5) * 0.2; // ±10% variance
-		const rawValue = eventsPerDay * (1 + variance);
+		let rawValue = eventsPerDay * (1 + variance);
+
+		// Apply active scenario modifiers
+		const engine = getScenarioEngine();
+		const activeModifiers = engine.getActiveModifiers();
+		
+		for (const modifier of activeModifiers) {
+			if (modifier.affectedStreams[stream]) {
+				const streamMod = modifier.affectedStreams[stream];
+				if (streamMod.multiplier) {
+					rawValue = rawValue * streamMod.multiplier;
+				}
+				if (streamMod.override !== undefined) {
+					rawValue = streamMod.override;
+				}
+			}
+		}
+
+		// Apply external event impacts
+		const activeEvents = engine.getActiveEvents();
+		for (const event of activeEvents) {
+			if (event.expectedImpact?.streams?.includes(stream)) {
+				const impact = event.expectedImpact;
+				if (impact.direction === 'increase') {
+					const magnitude = impact.magnitude === 'high' ? 1.5 : impact.magnitude === 'medium' ? 1.25 : 1.1;
+					rawValue = rawValue * magnitude;
+				} else if (impact.direction === 'decrease') {
+					const magnitude = impact.magnitude === 'high' ? 0.5 : impact.magnitude === 'medium' ? 0.75 : 0.9;
+					rawValue = rawValue * magnitude;
+				}
+			}
+		}
 
 		// Normalize the value
 		const baselineStats = getBaselineStatsForCustomerTutorSearch();
