@@ -16,6 +16,8 @@ Building the real-time operations dashboard that visualizes marketplace data str
 
 **Note**: This document covers the FRONTEND/DASHBOARD only. See `ai-mock-simulator-tasks.md` for backend tasks and `ARCHITECTURE-2.md` for system integration details.
 
+**Development Approach**: Vertical slices - each slice is a fully testable, end-to-end feature that can be tested immediately after completion.
+
 ---
 
 ## Phase 1: Foundation & Setup (Days 1-2)
@@ -55,71 +57,95 @@ Building the real-time operations dashboard that visualizes marketplace data str
 
 ---
 
-## Phase 2: WebSocket Client Integration (Days 2-3)
+## Phase 2: Vertical Slices - Build Testable Features Incrementally
 
-### 2.1 WebSocket Connection Manager
-- [ ] Build WebSocket connection with auto-reconnect
-- [ ] Implement subscription management
-- [ ] Build event handler for incoming stream data (including catchup message type)
-- [ ] Implement heartbeat/ping-pong
-- [ ] Handle catch-up events on connection
-  - Receive catchup message with events after lastTimestamp
-  - Merge catch-up events with historical data
-  - Start real-time events after catchUpEndTime
+### Slice 1: Minimal Testable Dashboard (Day 2)
+**Goal**: Create a basic dashboard page with hardcoded data - verify layout and routing work.
 
-### 2.2 Data Aggregation & Normalization
-- [ ] Build stream data aggregator
-- [ ] Build anomaly detector
-- [ ] Build efficient update strategy (debouncing, batching)
-
-### 2.3 Historical Data Loading
-- [ ] Build historical data fetcher from API
-- [ ] Build data caching and merging with real-time
-- [ ] Handle time range changes
-- [ ] Implement gap detection and fill
-  - Detect gap between historical data end time and WebSocket connection time
-  - If gap > 60 seconds, request historical data for gap period
-  - Merge gap data with existing historical data
-  - Pass lastTimestamp to WebSocket subscribe message for catch-up events
+- [ ] Create `/dashboard` route page
+  - Basic layout with header
+  - Placeholder sections for chart, heatmap, events, recommendations
+  - Hardcoded connection status: "Connected"
+  - Test: Navigate to `/dashboard`, verify page loads
+  - **Testable**: ✅ Can test immediately in browser
 
 ---
 
-## Phase 3: Main Time-Series Chart (Days 3-5)
+### Slice 2: Single Stream on Chart (Hardcoded) (Day 2-3)
+**Goal**: Display one stream on a chart with hardcoded data - verify ECharts integration works.
 
-### 3.1 ECharts Setup & Configuration
 - [ ] Install Apache ECharts (`echarts: ^5.5.0`)
 - [ ] Create ECharts Svelte wrapper component (see `lib/components/ECharts.svelte`)
-- [ ] Build chart container component
-- [ ] Initialize ECharts instance with proper lifecycle
+- [ ] Build minimal chart component
+  - Display one stream (`customer.tutor.search`) with hardcoded data
+  - 7 data points (one per day for last week)
+  - Basic line chart
+  - Test: See chart render with hardcoded data
+  - **Testable**: ✅ Can test immediately in browser
 
-### 3.2 Chart Data Management
-- [ ] Build chart data transformer (stores → ECharts format)
-- [ ] Implement dynamic series add/remove
-- [ ] Handle real-time data updates with smooth animations
-
-### 3.3 Chart Visualization Features
-- [ ] Build baseline reference line (y=50)
-- [ ] Build variance bands (normal/warning/critical zones)
-- [ ] Build external event markers (vertical lines with icons)
-- [ ] Implement "NOW" indicator (current time marker)
-
-### 3.4 Chart Interactions
-- [ ] Build rich tooltip with stream details
-- [ ] Implement zoom and pan (mouse wheel, drag, slider)
-- [ ] Build time range selector (24h, 7d, 30d, custom)
-- [ ] Implement legend interactions (click to show/hide series)
-
-### 3.5 AI-Suggested View
-- [ ] Build "AI: Show me what's important" button
-- [ ] Call Dashboard AI to recommend stream combinations
-- [ ] Apply AI-selected streams to chart automatically
-- [ ] Display AI explanation for why these streams were chosen
+- [ ] Add baseline reference line (y=50)
+  - Horizontal line at normalized value 50
+  - Test: Verify baseline line appears
+  - **Testable**: ✅ Can test immediately in browser
 
 ---
 
-## Phase 4: Interactive Heatmap (Days 5-7)
+### Slice 3: WebSocket Connection (Minimal) (Day 3)
+**Goal**: Connect to WebSocket and show connection status - verify WebSocket integration works.
 
-### 4.1 Heatmap Component Structure
+- [ ] Build minimal WebSocket connection manager
+  - Connect to `ws://localhost:5173/ws` (or production URL)
+  - Track connection state (connected/disconnected)
+  - Display connection status in header
+  - Test: Connect to WebSocket, verify status shows "Connected"
+  - **Testable**: ✅ Can test immediately (requires backend WebSocket server)
+
+- [ ] Implement auto-reconnect
+  - Reconnect on disconnect
+  - Show "Reconnecting..." status
+  - Test: Disconnect WebSocket, verify reconnection
+  - **Testable**: ✅ Can test immediately
+
+---
+
+### Slice 4: Real-time Updates (One Stream) (Day 3-4)
+**Goal**: Receive one stream event via WebSocket and update chart - verify real-time updates work.
+
+- [ ] Subscribe to one stream (`customer.tutor.search`)
+  - Send subscription message: `{ type: "subscribe", topics: ["customer.tutor.search"] }`
+  - Handle subscription confirmation
+  - Test: Verify subscription message sent
+  - **Testable**: ✅ Can test via WebSocket client
+
+- [ ] Handle incoming stream events
+  - Receive `{ type: "event", data: StreamEvent }` messages
+  - Update chart with new data point
+  - Smooth animation for new points
+  - Test: Receive events, verify chart updates
+  - **Testable**: ✅ Can test via WebSocket (requires backend generating events)
+
+---
+
+### Slice 5: Historical Data Loading (Minimal) (Day 4)
+**Goal**: Load 1 day of historical data for 1 stream and display on chart.
+
+- [ ] Build historical data fetcher
+  - Call `GET /api/simulation/history?start=X&end=Y&streams=customer.tutor.search`
+  - Parse response and merge with chart data
+  - Test: Load historical data, verify chart shows past data
+  - **Testable**: ✅ Can test via API (requires backend API endpoint)
+
+- [ ] Merge historical with real-time
+  - Load historical data on mount
+  - Append real-time events to historical data
+  - Test: Verify seamless transition from historical to real-time
+  - **Testable**: ✅ Can test via API + WebSocket
+
+---
+
+### Slice 6: Heatmap (Minimal - Display Only) (Day 4-5)
+**Goal**: Display 50 streams in a heatmap grid - verify heatmap layout works.
+
 - [ ] Build 50-cell heatmap grid (organized by domain)
   - Customer: 10 cells
   - Tutor: 10 cells  
@@ -127,6 +153,7 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - Support: 8 cells
   - Marketing: 5 cells
   - System: 5 cells
+  - Hardcoded values for now (all at 50 = normal)
   
 - [ ] Build individual heatmap cell component
   - Color-coded by normalized value:
@@ -134,28 +161,183 @@ Building the real-time operations dashboard that visualizes marketplace data str
     - Yellow (🟡): 30-40 or 60-70 (warning)
     - Red (🔴): <30 or >70 (critical)
   - Display stream name on hover
-  - Click to select/deselect for chart
-  - Multi-select support (hold shift/ctrl)
+  - Test: See heatmap with all cells, verify colors work
+  - **Testable**: ✅ Can test immediately in browser
 
-### 4.2 Heatmap Interactions
+---
+
+### Slice 7: Heatmap Interactions (Day 5)
+**Goal**: Click heatmap cells to add/remove streams from chart.
+
 - [ ] Implement cell click handler
   - Toggle stream selection
-  - Add/remove from chart
+  - Add/remove stream from chart
   - Visual feedback (highlighted border when selected)
-  
-- [ ] Build hover tooltip
-  - Stream name and current value
-  - Normalized score (0-100)
-  - Variance from baseline (σ)
-  - Short explanation: "3.2σ below baseline. Supply shortage detected."
-  - Last 6-hour mini sparkline trend
-  
-- [ ] Implement pulsing animation for anomalies
-  - Critical anomalies pulse (scale + opacity animation)
-  - Smooth CSS animation
-  - Only pulse while anomaly persists
+  - Test: Click cell, verify stream appears on chart
+  - **Testable**: ✅ Can test immediately in browser
 
-### 4.3 Heatmap Filtering
+- [ ] Update chart with selected streams
+  - Add new series when stream selected
+  - Remove series when stream deselected
+  - Test: Select multiple streams, verify all appear on chart
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 8: Heatmap Real-time Updates (Day 5)
+**Goal**: Heatmap cells update in real-time as WebSocket events arrive.
+
+- [ ] Subscribe to all streams (`*`)
+  - Send subscription: `{ type: "subscribe", topics: ["*"] }`
+  - Receive events for all streams
+  
+- [ ] Update heatmap cells with real-time data
+  - Update cell color based on normalized value
+  - Update cell value on hover
+  - Test: Receive events, verify heatmap cells update
+  - **Testable**: ✅ Can test via WebSocket (requires backend)
+
+---
+
+### Slice 9: External Events Timeline (Minimal) (Day 5-6)
+**Goal**: Display external events in a timeline - verify events display works.
+
+- [ ] Build horizontal timeline component
+  - Chronological list of events (newest first)
+  - Each event is a card with: icon, title, timestamp, severity badge
+  - Hardcoded events for now (from API response)
+  - Test: See events in timeline, verify layout
+  - **Testable**: ✅ Can test via API (requires backend API endpoint)
+
+- [ ] Load events from historical data API
+  - Events included in `GET /api/simulation/history` response
+  - Display events in timeline
+  - Test: Load historical data, verify events appear
+  - **Testable**: ✅ Can test via API
+
+---
+
+### Slice 10: Event-Chart Integration (Day 6)
+**Goal**: Click events to plot them on chart as vertical markers.
+
+- [ ] Implement "plot on chart" toggle
+  - Toggle button on each event card
+  - When enabled, event appears as vertical marker on chart
+  - When disabled, event marker removed
+  - Test: Toggle event plotting, verify markers appear/disappear
+  - **Testable**: ✅ Can test immediately in browser
+
+- [ ] Build event markers on chart
+  - Vertical line at event timestamp
+  - Icon and tooltip on hover
+  - Test: Verify markers render correctly
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 11: Recommendations Panel (Minimal - Hardcoded) (Day 6-7)
+**Goal**: Display recommendations panel with hardcoded recommendations.
+
+- [ ] Build recommendations sidebar panel (right side of dashboard)
+  - Scrollable list
+  - Sections: Critical, Warning, Normal, Resolved
+  - Hardcoded recommendations for now
+  - Test: See recommendations panel, verify layout
+  - **Testable**: ✅ Can test immediately in browser
+
+- [ ] Build individual recommendation card component
+  - Priority indicator (🔴 Critical, 🟡 Warning, 🟢 Normal)
+  - Title, description, impact statement
+  - "⚡ Take action" button
+  - Test: See recommendation cards, verify styling
+  - **Testable**: ✅ Can test immediately in browser
+
+- [ ] Implement "Take action" button behavior
+  - Click button → show loading → move to "Resolved" section
+  - Test: Click action button, verify recommendation moves to resolved
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 12: Dashboard AI Integration (Minimal) (Day 7-8)
+**Goal**: Generate real AI recommendations from OpenAI.
+
+- [ ] Create Dashboard AI system prompt
+  - Role: "You are an AI analyzing marketplace operations data"
+  - Context: Stream data, external events, baseline statistics
+  - Output: Recommendations with priority, actions, confidence
+  
+- [ ] Build AI recommendation generator (minimal)
+  - Trigger manually (button click for now)
+  - Prepare context with current anomalies (hardcoded for now)
+  - Call OpenAI API
+  - Parse recommendations from response
+  - Display in recommendations panel
+  - Test: Click button, verify AI recommendations appear
+  - **Testable**: ✅ Can test with OpenAI API key
+
+---
+
+### Slice 13: Expand to All Streams (Day 8)
+**Goal**: Support all 50 streams instead of just one.
+
+- [ ] Update WebSocket subscription
+  - Subscribe to all streams (`*`)
+  - Handle events for all stream types
+  
+- [ ] Update chart to handle multiple streams
+  - Support up to 10 simultaneous streams
+  - Distinct colors for each stream
+  - Legend with stream names
+  
+- [ ] Update heatmap with real-time data
+  - All 50 cells update from WebSocket events
+  - Test: Receive events for all streams, verify heatmap updates
+  - **Testable**: ✅ Can test via WebSocket
+
+---
+
+### Slice 14: Full Historical Data (Day 8-9)
+**Goal**: Load full 7-day historical data for all streams.
+
+- [ ] Expand historical data loading
+  - Load 7 days of data for all streams
+  - Merge with real-time updates
+  - Handle time range changes
+  
+- [ ] Implement gap detection and fill
+  - Detect gap between historical data end time and WebSocket connection time
+  - Request historical data for gap period if gap > 60 seconds
+  - Test: Load dashboard, verify seamless data continuity
+  - **Testable**: ✅ Can test via API + WebSocket
+
+---
+
+### Slice 15: Chart Interactions (Day 9)
+**Goal**: Add zoom, pan, and time range selection to chart.
+
+- [ ] Implement zoom and pan
+  - Mouse wheel zoom
+  - Drag to pan
+  - Time range slider
+  
+- [ ] Build time range selector
+  - Buttons: 24h, 7d, 30d, Custom
+  - Reload historical data when range changes
+  - Test: Change time range, verify chart updates
+  - **Testable**: ✅ Can test immediately in browser
+
+- [ ] Build rich tooltip
+  - Show stream details on hover
+  - Display normalized value, raw value, timestamp
+  - Test: Hover over chart, verify tooltip appears
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 16: Heatmap Filtering (Day 9)
+**Goal**: Filter heatmap by status and domain.
+
 - [ ] Build filter buttons above heatmap
   - "All" (default)
   - "🔴 Red only" - show only critical anomalies
@@ -165,325 +347,175 @@ Building the real-time operations dashboard that visualizes marketplace data str
   
 - [ ] Implement filter logic
   - Hide filtered-out cells (or gray them out)
-  - Update grid layout dynamically
   - Maintain selections when filters change
-
-### 4.4 Related Stream Highlighting
-- [ ] Build "show related streams" feature
-  - When stream selected, highlight related streams in heatmap
-  - Use relationship graph from config
-  - Visual indicator (glow effect or icon)
-  - Useful for understanding cascading effects
+  - Test: Apply filters, verify cells hide/show correctly
+  - **Testable**: ✅ Can test immediately in browser
 
 ---
 
-## Phase 5: External Events Timeline (Days 7-8)
+### Slice 17: Event Filtering (Day 9-10)
+**Goal**: Filter events timeline by type and impact.
 
-### 5.1 Timeline Component
-- [ ] Build horizontal timeline component
-  - Chronological list of events (newest first or oldest first, toggleable)
-  - Each event is a card with: icon, title, timestamp, severity badge
-  - Click to toggle plotting on chart
-  - External link button (opens in new tab)
-  
-- [ ] Build individual event card component
-  - Icon based on event type
-  - Title and short description
-  - Timestamp (relative: "2 hours ago" or absolute)
-  - Severity badge (🔴 Critical, 🟡 Warning, 🟢 Info)
-  - "Plot on chart" toggle button
-  - External link icon (if link available)
-
-### 5.2 Event Filtering
 - [ ] Build filter dropdown for event types
-  - Marketing
-  - Product
-  - Infrastructure  
-  - Academic
-  - Competitive
-  - Operational
+  - Marketing, Product, Infrastructure, Academic, Competitive, Operational
   - Multi-select filter
   
 - [ ] Build filter by impact level
-  - High impact
-  - Medium impact
-  - Low impact
-  - Unknown impact
+  - High impact, Medium impact, Low impact
   
 - [ ] Build date range filter
   - Last 24h, Last 7d (default), Last 30d, Custom
   - Sync with chart time range
-
-### 5.3 Event-Chart Integration
-- [ ] Implement "plot on chart" toggle
-  - When enabled, event appears as vertical marker on chart
-  - When disabled, event marker removed from chart
-  - State persists (remember which events are plotted)
-  
-- [ ] Implement "click event card highlights related streams"
-  - Clicking event card highlights affected streams in heatmap
-  - Shows correlation strength (how much each stream changed)
-  - Option to add all affected streams to chart automatically
+  - Test: Apply filters, verify events filter correctly
+  - **Testable**: ✅ Can test immediately in browser
 
 ---
 
-## Phase 6: AI Recommendations Panel (Days 8-10)
+### Slice 18: AI Recommendations (Full) (Day 10)
+**Goal**: Full AI recommendations with automatic generation and analysis.
 
-### 6.1 Dashboard AI Contextualizer Setup
-- [ ] Create separate AI system prompt for Dashboard AI
-  - Role: "You are an AI analyzing marketplace operations data to provide insights"
-  - Context: Stream data, external events, baseline statistics
-  - Output: Recommendations with priority, actions, confidence
-  - Different from Simulator AI (analysis not simulation)
+- [ ] Implement automatic AI trigger
+  - Run every 2 minutes
+  - Trigger on significant anomaly (stream >2σ from baseline)
+  - Prepare context with real stream data
   
-- [ ] Build Dashboard AI context preparation
+- [ ] Build full recommendation context
   - Current anomalies (streams with high variance)
   - Recent external events
   - Stream correlation data
   - Historical baseline for comparison
   
-- [ ] Build AI recommendation generator
-  - Triggered periodically (every 2 minutes) or on significant anomaly
-  - Calls OpenAI with dashboard context
-  - Parses recommendations from AI response
-  - Updates recommendations store
-
-### 6.2 Recommendations Panel Component
-- [ ] Build recommendations sidebar panel (right side of dashboard)
-  - Scrollable list
-  - Sections: Critical, Warning, Normal, Resolved
-  - Each section collapsible
-  - Count badges showing number in each priority
-  
-- [ ] Build individual recommendation card component
-  - Priority indicator (🔴 Critical, 🟡 Warning, 🟢 Normal)
-  - Title (concise, action-oriented)
-  - Description (1-2 sentences explaining issue)
-  - Impact statement (what happens if not addressed)
-  - Likely cause (root cause analysis)
-  - Confidence score (AI's confidence %)
-  - Related external events (links to event cards)
-  - Affected streams (links to heatmap cells)
-  - Timestamp (when detected)
-
-### 6.3 Recommended Actions
-- [ ] Build actions section within recommendation card
-  - List of 1-3 recommended actions
-  - Each action has:
-    - Label (short action description)
-    - Full description
-    - Expected impact
-    - Time to effect (how long until data changes)
-  - "⚡ Take action" button per action
-  
-- [ ] Implement "Take action" button behavior
-  - Click button
-  - Show loading spinner on button
-  - Wait 2-3 seconds (arbitrary delay to simulate processing)
-  - Change to checkmark icon
-  - Move recommendation to "Resolved" section (greyed out)
-  - Add timestamp: "Action taken X minutes ago. Expected resolution in Y."
-  - Recommendation stays visible at bottom of panel
-
-### 6.4 Recommendation Interactions
-- [ ] Build "📊 View details" button
-  - Expands recommendation card to show:
+- [ ] Enhance recommendation cards
     - Full analysis with mini-charts
-    - List of affected customer/tutor IDs (sample, first 10)
-    - Timeline of related events
-    - Historical comparison ("last time this happened...")
-    - Alternative actions with trade-offs
-  - Collapse back to summary view
-  
-- [ ] Build "Show related streams" button
-  - Highlights affected streams in heatmap
-  - Optionally adds them to chart
-  - Filters event timeline to show related events
-
-### 6.5 Recommendations Management
-- [ ] Build dismiss/resolve workflow
-  - "❌ Dismiss" button removes from active list (doesn't move to resolved)
-  - Taking action moves to resolved (stays visible, greyed out)
-  - Resolved recommendations show: "Resolved X minutes ago"
-  - Resolved section can be collapsed to hide
-  
-- [ ] Build recommendation refresh
-  - Dashboard AI runs every 2 minutes
-  - New recommendations appear at top
-  - Updated recommendations re-sort by priority
-  - Resolved recommendations stay in place
-
-### 6.6 Customer Health & Retention Analysis
-- [ ] Build customer health score calculation
-  - Aggregate signals into 0-100 health score:
-    - Session velocity (sessions/week) - higher = better
-    - First session success rate - higher = better
-    - Payment status (success vs failure) - success = better
-    - IB call count (≥2 in 14 days = high risk) - lower = better
-    - Support ticket volume - lower = better
-    - Subscription downgrades - none = better
-  - Calculate per customer, aggregate by cohort/segment
-  
-- [ ] Build first session success rate analysis
-  - Identify first session per customer (from `session.started`)
-  - Track success (first session `session.completed`)
-  - Calculate success rate by tutor_id and subject
-  - Display in recommendations: "Math tutors have 20% lower first session success"
-  
-- [ ] Build session velocity trends by cohort
-  - Calculate velocity per customer (sessions/week from `session.completed`)
-  - Group by `cohort_id` from `customer.signup.completed`
-  - Track trends over time
-  - Display in recommendations: "Q1-2025 cohort showing declining velocity"
-  
-- [ ] Build churn risk prediction by segment
-  - Calculate churn risk score per customer using:
-    - IB call pattern (≥2 in 14 days = high risk)
-    - Session velocity trends (declining = risk)
-    - Payment failure history
-    - First session success rate
-    - Support ticket volume
-  - Segment by cohort, subscription plan, subject preference
-  - Display in recommendations: "15 customers in Q1-2025 cohort at high churn risk"
-
-### 6.7 Supply/Demand & Campaign Recommendations
-- [ ] Enhance Dashboard AI to analyze supply/demand
-  - Current supply vs. demand by subject
-  - Projected supply vs. demand (next 24-48 hours)
-  - Identify shortages/surpluses
-  
-- [ ] Generate recruiting campaign recommendations
-  - "Math tutor supply 30% below demand - increase recruiting spend"
-  - "Chemistry tutors oversupplied - reduce recruiting spend"
-  - Include expected impact and time to effect
-  - "Take action" button simulates campaign adjustment (mock action)
+  - Related streams and events
+  - Confidence scores
+  - Test: Wait for AI recommendations, verify they appear automatically
+  - **Testable**: ✅ Can test with OpenAI API key
 
 ---
 
-## Phase 7: Dashboard Layout & Polish (Days 10-11)
+### Slice 19: Advanced Chart Features (Day 10-11)
+**Goal**: Add variance bands, event markers, and AI-suggested views.
 
-### 7.1 Main Dashboard Layout
-- [ ] Build responsive grid layout (desktop-only)
-  ```
-  ┌────────────────────────────────────────────────┬──────────────────┐
-  │  CHART (normalized time-series)                 │  RECOMMENDATIONS│
-  │  Large area, 60-70% width                       │  Sidebar, 30-40%│
-  │                                                  │  Scrollable      │
-  ├────────────────────────────────────────────────┤                  │
-  │  HEATMAP (50 cells, interactive)               │                  │
-  │  Grid organized by domain                       │                  │
-  ├────────────────────────────────────────────────┤                  │
-  │  EXTERNAL EVENTS TIMELINE                       │                  │
-  │  Horizontal scrollable list                     │                  │
-  └────────────────────────────────────────────────┴──────────────────┘
-  ```
-  
-- [ ] Build header/nav
-  - Dashboard title
-  - Connection status indicator (🟢 Connected, 🔴 Disconnected)
-  - Link to Admin UI (`/admin`)
-  - Settings button (future: theme toggle, etc.)
+- [ ] Build variance bands (normal/warning/critical zones)
+  - Shaded regions on chart
+  - Green: 40-60 (normal)
+  - Yellow: 30-40 or 60-70 (warning)
+  - Red: <30 or >70 (critical)
+  - Test: Verify bands render correctly
+  - **Testable**: ✅ Can test immediately in browser
 
-### 7.2 Styling & Theming
-- [ ] Apply shadcn-svelte theme
-  - Use shadcn color system
-  - Consistent spacing (Tailwind utilities)
-  - Card components for panels
-  - Button styles from shadcn
-  
-- [ ] Build custom styles for dashboard
-  - Chart container styling
-  - Heatmap cell styling (colors, hover, selected states)
-  - Recommendation card styling
-  - Event card styling
-  - Pulsing animation keyframes
-  
-- [ ] Implement color palette for streams
-  - Distinct colors for up to 10 simultaneous streams on chart
-  - Accessible colors (WCAG AA contrast)
-  - Consistent color assignment (same stream = same color)
+- [ ] Implement "NOW" indicator
+  - Vertical line at current time
+  - Updates as time progresses
+  - Test: Verify NOW indicator appears and updates
+  - **Testable**: ✅ Can test immediately in browser
 
-### 7.3 Loading States
+- [ ] Build "AI: Show me what's important" button
+  - Call Dashboard AI to recommend stream combinations
+  - Apply AI-selected streams to chart automatically
+  - Display AI explanation
+  - Test: Click button, verify AI selects streams
+  - **Testable**: ✅ Can test with OpenAI API key
+
+---
+
+### Slice 20: Heatmap Pulsing Animation (Day 11)
+**Goal**: Add pulsing animation for critical anomalies.
+
+- [ ] Implement pulsing animation for anomalies
+  - Critical anomalies pulse (scale + opacity animation)
+  - Smooth CSS animation
+  - Only pulse while anomaly persists
+  - Test: Create critical anomaly, verify pulsing animation
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 21: Chart Presets & Saved Views (Day 11)
+**Goal**: Add quick view buttons and save/load custom views.
+
+- [ ] Build quick view buttons above chart
+  - "Supply/Demand Balance" - loads relevant streams
+  - "Customer Health" - loads retention indicators
+  - "Quality Metrics" - loads session ratings
+  - "System Health" - loads system errors
+  - Test: Click preset buttons, verify streams load
+  - **Testable**: ✅ Can test immediately in browser
+  
+- [ ] Build save/load custom views
+  - "Save current view" button
+  - Store in localStorage
+  - "Load view" dropdown with saved views
+  - Test: Save view, reload page, verify view restores
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 22: Data Export (Day 11-12)
+**Goal**: Export chart data and screenshots.
+
+- [ ] Build "Export chart data" button
+  - Download current chart data as CSV
+  - Include: timestamps, all plotted streams, event markers
+  - Test: Export data, verify CSV file downloads
+  - **Testable**: ✅ Can test immediately in browser
+  
+- [ ] Build "Export screenshot" button
+  - Capture chart as PNG image
+  - Use ECharts built-in export feature
+  - Test: Export screenshot, verify PNG downloads
+  - **Testable**: ✅ Can test immediately in browser
+
+---
+
+### Slice 23: Customer Health & Retention Analysis (Day 12)
+**Goal**: Add customer health scoring and churn risk analysis.
+
+- [ ] Build customer health score calculation
+  - Aggregate signals into 0-100 health score
+  - Session velocity, payment status, IB calls, etc.
+  - Calculate per customer, aggregate by cohort
+  
+- [ ] Build churn risk prediction
+  - Calculate churn risk score per customer
+  - Segment by cohort, subscription plan, subject preference
+  - Display in recommendations
+  - Test: Verify health scores and churn risk calculations
+  - **Testable**: ✅ Can test with real data
+
+---
+
+### Slice 24: Polish & Error Handling (Day 12)
+**Goal**: Add loading states, error handling, and polish.
+
 - [ ] Build skeleton loaders
   - Chart skeleton while loading historical data
   - Heatmap skeleton while connecting to WebSocket
   - Recommendations skeleton while AI generates
-  
-- [ ] Build connection status indicators
-  - Banner at top: "Connecting to data stream..."
-  - "Reconnecting..." with retry countdown
-  - "Connected" confirmation (brief, then fades)
+  - Test: Verify skeletons appear during loading
+  - **Testable**: ✅ Can test immediately in browser
 
-### 7.4 Error States
 - [ ] Build error handling UI
   - WebSocket connection error: "Unable to connect. Retrying..."
   - API error: "Failed to load data. Refresh to try again."
   - AI error: "AI recommendations temporarily unavailable"
   - Toast notifications for transient errors
-  - Error boundary for unexpected crashes
+  - Test: Simulate errors, verify error messages appear
+  - **Testable**: ✅ Can test by disconnecting WebSocket/API
+
+- [ ] Apply final styling and polish
+  - shadcn-svelte theme
+  - Consistent spacing and colors
+  - Smooth animations
+  - Test: Verify polished UI looks good
+  - **Testable**: ✅ Can test immediately in browser
 
 ---
 
-## Phase 8: Advanced Features (Days 11-12)
+## Phase 3: Testing & Refinement (Days 12-13)
 
-### 8.1 Chart Presets & Views
-- [ ] Build quick view buttons above chart
-  - "Supply/Demand Balance" - loads relevant streams
-    - Supply: `tutor.availability.set`, `tutor.onboarding.approved`
-    - Demand: `customer.tutor.search`, `session.booking.requested`
-    - Balance: `session.booking.confirmed`, `session.booking.expired`
-  - "Customer Health" - loads retention and health indicators
-    - `session.completed` (session velocity)
-    - `support.call.inbound` (IB calls - ≥2 in 14 days = churn risk)
-    - `customer.subscription.payment_failure` (payment issues)
-    - `session.booking.expired` (can't find tutors)
-    - `customer.subscription.plan_changed` (downgrades)
-    - `support.refund.requested` (severe dissatisfaction)
-    - Filter by cohort, subscription plan, or subject
-  - "Quality Metrics" - loads session ratings, no-shows
-  - "System Health" - loads system errors, payment gateway status
-  - "Custom View" - user's saved selections
-  
-- [ ] Build save/load custom views
-  - "Save current view" button
-  - Name the view
-  - Store in localStorage
-  - "Load view" dropdown with saved views
-
-### 8.2 Data Export
-- [ ] Build "Export chart data" button
-  - Download current chart data as CSV
-  - Include: timestamps, all plotted streams, event markers
-  - Filename: `marketplace-data-[date].csv`
-  
-- [ ] Build "Export screenshot" button
-  - Capture chart as PNG image
-  - Use ECharts built-in export feature
-  - Filename: `marketplace-chart-[date].png`
-
-### 8.3 Time Travel (Optional)
-- [ ] Build time scrubber control
-  - Slider to scrub through historical time
-  - Pause real-time updates
-  - Show dashboard state at selected time
-  - "Return to NOW" button
-  - Useful for replaying scenarios
-
-### 8.4 Stream Details Modal
-- [ ] Build detailed stream view modal
-  - Click stream name anywhere to open
-  - Shows:
-    - Full 30-day history chart
-    - Statistics (mean, σ, percentiles)
-    - Recent events for this stream
-    - Related streams
-    - Related recommendations (if any exist for this stream)
-
----
-
-## Phase 9: Testing & Polish (Days 11-12)
-
-### 9.1 UI/UX Testing
+### 3.1 UI/UX Testing
 - [ ] Test all interactions
   - Click heatmap cells → streams added to chart
   - Click event cards → markers appear on chart
@@ -503,14 +535,13 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - AI failures
   - Malformed data
 
-### 9.2 Performance Optimization
+### 3.2 Performance Optimization
 - [ ] Optimize chart rendering
   - Limit max data points shown (downsample if needed)
   - Debounce real-time updates
-  - Use ECharts performance features (lazy loading, progressive rendering)
+  - Use ECharts performance features
   
 - [ ] Optimize heatmap rendering
-  - Virtual scrolling if needed (probably not with only 50 cells)
   - Efficient re-rendering (only update changed cells)
   - CSS transforms for animations (GPU-accelerated)
   
@@ -519,7 +550,7 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - Use Svelte's fine-grained reactivity effectively
   - Profile and identify bottlenecks
 
-### 9.3 Accessibility
+### 3.3 Accessibility
 - [ ] Add keyboard navigation
   - Tab through interactive elements
   - Enter to activate buttons
@@ -528,14 +559,18 @@ Building the real-time operations dashboard that visualizes marketplace data str
   
 - [ ] Add ARIA labels
   - Screen reader friendly labels for all interactive elements
-  - Announce state changes (e.g., "Stream added to chart")
+  - Announce state changes
   - Semantic HTML
   
 - [ ] Add focus indicators
   - Clear focus outlines on all interactive elements
-  - High contrast mode support (use CSS variables)
+  - High contrast mode support
 
-### 9.4 Documentation
+---
+
+## Phase 4: Documentation & Deployment (Days 13-14)
+
+### 4.1 Documentation
 - [ ] Create user guide
   - How to use the dashboard
   - Explanation of each section
@@ -547,11 +582,7 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - First-time user walkthrough (optional)
   - Inline explanations where helpful
 
----
-
-## Phase 10: Deployment & Demo Prep (Day 12)
-
-### 10.1 Build & Deploy
+### 4.2 Build & Deploy
 - [ ] Optimize production build
   - Minification
   - Code splitting
@@ -563,7 +594,7 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - Test on production URL
   - Verify WebSocket connection works
 
-### 10.2 Demo Scenarios
+### 4.3 Demo Preparation
 - [ ] Prepare demo script
   - Start with baseline (all green)
   - Trigger exam season scenario (admin UI)
@@ -577,20 +608,7 @@ Building the real-time operations dashboard that visualizes marketplace data str
   - Show how external events correlate with data
   - Demonstrate AI insights
   - Show proactive recommendations
-  - Highlight key interactions (heatmap, chart, events)
-
-### 10.3 Handoff
-- [ ] Create demo video (optional)
-  - Screen recording with voiceover
-  - 3-5 minutes showing key features
-  - Upload to video platform
-  
-- [ ] Create README for dashboard
-  - Architecture overview
-  - Component structure
-  - State management
-  - How to add new features
-  - Deployment instructions
+  - Highlight key interactions
 
 ---
 
@@ -623,19 +641,17 @@ Building the real-time operations dashboard that visualizes marketplace data str
 
 ## Timeline Summary
 
-- **Days 1-2**: Foundation, setup, state management
-- **Days 2-3**: WebSocket integration, data aggregation
-- **Days 3-5**: Main chart with ECharts
-- **Days 5-7**: Interactive heatmap
-- **Days 7-8**: External events timeline
-- **Days 8-10**: AI recommendations panel
-- **Days 10-11**: Dashboard layout and polish
-- **Days 11-12**: Advanced features
-- **Days 11-12**: Testing, optimization, deployment
+- **Days 1-2**: Foundation, setup, state management, types
+- **Days 2-4**: Vertical slices 1-5 (minimal testable features)
+- **Days 4-6**: Vertical slices 6-10 (expand to full functionality)
+- **Days 6-10**: Vertical slices 11-18 (advanced features)
+- **Days 10-12**: Vertical slices 19-24 (polish and advanced features)
+- **Days 12-13**: Testing and refinement
+- **Days 13-14**: Documentation and deployment
 
-**Total Estimated Time**: 12 days for full feature set
+**Total Estimated Time**: 14 days for full feature set
 
-**MVP Timeline**: 8-9 days (through Phase 6)
+**MVP Timeline**: 9-10 days (through Slice 18)
 
 ---
 
@@ -650,3 +666,4 @@ Building the real-time operations dashboard that visualizes marketplace data str
 - Real-time updates must be smooth (no jank) - performance is critical
 - AI recommendations are proactive (not just Q&A) - the AI surfaces insights automatically
 - External events are key to causation analysis - not just decoration
+- **Each slice is fully testable** - you can verify it works before moving to the next slice
