@@ -19,7 +19,7 @@ const server = http.createServer(handler);
 
 // Initialize WebSocket server
 const wss = new WebSocketServer({ noServer: true });
-const clients = new Set<WebSocket>();
+const clients = new Set();
 
 wss.on('connection', (ws) => {
 	clients.add(ws);
