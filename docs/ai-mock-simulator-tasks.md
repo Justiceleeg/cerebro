@@ -21,13 +21,13 @@ Building the backend mock data generation service that simulates 50+ marketplace
 ## Phase 1: Foundation & Architecture (Days 1-2)
 
 ### 1.1 Project Setup
-- [ ] Initialize SvelteKit project with TypeScript
-- [ ] Set up Railway.app deployment configuration
-- [ ] Install dependencies:
+- [x] Initialize SvelteKit project with TypeScript
+- [x] Set up Railway.app deployment configuration
+- [x] Install dependencies:
   - `ws`: `^8.18.0` (WebSocket server)
   - `@types/ws`: `^8.5.0` (TypeScript types for ws)
-- [ ] Configure environment variables (port, etc.)
-- [ ] Set up backend project structure:
+- [x] Configure environment variables (port, etc.)
+- [x] Set up backend project structure:
   ```
   /lib
     /streams         - Stream generation logic
@@ -42,7 +42,7 @@ Building the backend mock data generation service that simulates 50+ marketplace
   ```
 
 ### 1.2 Configuration & Documentation Files
-- [ ] Create `config/baseline-metrics.json` - Define baseline rates for all 50 streams
+- [x] Create `config/baseline-metrics.json` - Define baseline rates for all 50 streams
   - Session confirmation rates (~70-80%)
   - Tutor no-show rates (~2-5%)
   - Student churn rates by cohort
@@ -51,7 +51,7 @@ Building the backend mock data generation service that simulates 50+ marketplace
   - Growth rates, seasonal multipliers
   - Volume targets (tens of thousands of students, 1-8 students per tutor, ~3 sessions/tutor/day)
   
-- [ ] Create `config/stream-relationships.json` - Document interconnections
+- [x] Create `config/stream-relationships.json` - Document interconnections
   - Event chains (booking.requested → confirmed/declined/expired with timing)
   - Cascading effects (payment failure → support ticket → potential churn with delays)
   - Supply/demand correlations (tutor availability ↔ booking success)
@@ -59,19 +59,19 @@ Building the backend mock data generation service that simulates 50+ marketplace
   - Cross-domain relationships (low ratings → increased support contacts → churn risk)
   - Probability matrices for event outcomes
   
-- [ ] Create `config/stream-cadences.json` - Define update frequencies for each stream
+- [x] Create `config/stream-cadences.json` - Define update frequencies for each stream
   - **High frequency (seconds-minutes)**: session events, API logs, live chat
   - **Medium frequency (minutes-hours)**: searches, bookings, availability changes
   - **Low frequency (hours-daily)**: ad spend, payouts, platform snapshots, subscriptions
   - Include jitter/variance to avoid synchronized bursts
     
-- [ ] Create `config/scenario-definitions.json` - Define pre-defined scenarios (see `SCENARIO_DEFINITIONS.md` for structure)
+- [x] Create `config/scenario-definitions.json` - Define pre-defined scenarios (see `SCENARIO_DEFINITIONS.md` for structure)
   - For each scenario: id, name, description, affected streams with multipliers, cascade rules, expected duration, settlement behavior
   - Scenarios: exam-season-surge, supply-crisis, payment-outage, quality-crisis, support-overload, churn-pattern, recruiting-crisis, competitor-disruption, normal-operations
   - Include external events to inject for each scenario
   - Each scenario must be fully defined with all modifiers and events
 
-- [ ] Create `config/external-events-library.json` - Define external event types and templates
+- [x] Create `config/external-events-library.json` - Define external event types and templates
   - **Marketing/Growth**: Blog viral, TikTok mention, podcast sponsorship, ad campaigns, competitor launch, influencer endorsement
   - **Product/Platform**: App launch, feature release, UI redesign, pricing change, new payment method
   - **External/Infrastructure**: AWS outage, Stripe rate limiting, weather events, school holidays, internet outages
