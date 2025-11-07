@@ -48,3 +48,4 @@ The simulator SHALL organize TypeScript types in appropriate files.
 - **AND** core data types are in `lib/types/core.ts`
 - **AND** all types are exported from appropriate index files
 
+

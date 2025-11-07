@@ -63,3 +63,4 @@ The simulator SHALL have a configuration file defining external event types and 
 - **AND** it defines Internal Operational event types: Tutor training completion, support hours change, new pricing tier, referral program launch
 - **AND** each event type includes: type, expected impact (streams, direction, magnitude, duration), severity, icon, typical timing patterns
 
+

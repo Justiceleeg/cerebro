@@ -15,3 +15,4 @@ The simulator requires configuration files that define baseline metrics, stream 
 - Affected code: New configuration files in `/lib/config/`
 - Dependencies: References `docs/STREAM_DEFINITIONS.md` and `docs/SCENARIO_DEFINITIONS.md`
 
+

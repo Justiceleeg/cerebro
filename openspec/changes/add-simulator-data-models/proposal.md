@@ -13,3 +13,4 @@ The simulator requires TypeScript interfaces and data models for all stream even
 - Affected code: New TypeScript type definition files in `/lib/types/` or similar
 - Dependencies: References `docs/STREAM_DEFINITIONS.md` for stream schemas
 
+
