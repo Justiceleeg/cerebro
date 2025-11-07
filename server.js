@@ -4,16 +4,6 @@ import http from 'http';
 
 const PORT = process.env.PORT || 3000;
 
-// Import StreamGenerator from build output
-let StreamGenerator;
-try {
-	const streamsModule = await import('./build/lib/streams/stream-generator.js');
-	StreamGenerator = streamsModule.StreamGenerator;
-} catch (error) {
-	console.error('Failed to import StreamGenerator:', error);
-	process.exit(1);
-}
-
 // Create HTTP server with SvelteKit handler
 const server = http.createServer(handler);
 
@@ -21,15 +11,31 @@ const server = http.createServer(handler);
 const wss = new WebSocketServer({ noServer: true });
 const clients = new Set();
 
+// Simple event generator (minimal implementation)
+function generateSimpleEvent() {
+	return {
+		stream: 'customer.tutor.search',
+		timestamp: new Date().toISOString(),
+		data: {
+			user_id: `user_${Math.random().toString(36).substring(2, 11)}`,
+			subject: ['Math', 'Science', 'English', 'History'][Math.floor(Math.random() * 4)],
+			availability_start: new Date().toISOString(),
+			availability_end: new Date(Date.now() + 3600000).toISOString(),
+			keywords: ['online', 'experienced', 'one-on-one'].slice(0, Math.floor(Math.random() * 3) + 1)
+		},
+		normalizedValue: 40 + Math.random() * 20, // 40-60 range
+		anomalyFlag: 'normal'
+	};
+}
+
 wss.on('connection', (ws) => {
 	clients.add(ws);
 	console.log(`WebSocket client connected. Total clients: ${clients.size}`);
 
 	// Send one customer.tutor.search event every 5 seconds
-	const generator = new StreamGenerator();
 	const interval = setInterval(() => {
 		if (ws.readyState === WebSocket.OPEN) {
-			const event = generator.generateCustomerTutorSearch();
+			const event = generateSimpleEvent();
 			const message = {
 				type: 'event',
 				data: event
