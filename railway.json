@@ -5,7 +5,7 @@
 		"nixpacksVersion": "1.30.0",
 		"buildCommand": "pnpm run build",
 		"variables": {
-			"RAILWAY_NODE_VERSION": "22.12.0"
+			"NIXPACKS_NODE_VERSION": "22.12.0"
 		}
 	},
 	"deploy": {
