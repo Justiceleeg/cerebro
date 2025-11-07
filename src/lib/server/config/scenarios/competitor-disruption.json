@@ -1,0 +1,99 @@
+{
+  "_documentation": {
+    "purpose": "Simulates competitor impact. New signups decrease, engagement drops, marketing spend increases.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Competitor Disruption' scenario.",
+    "example": "When activated, customer.signup.completed decreases 40% (multiplier 0.6), marketing.ad.spend increases 50% (multiplier 1.5)."
+  },
+  "id": "competitor-disruption",
+  "name": "Competitor Disruption",
+  "description": "Simulates competitor impact. New signups decrease, engagement drops, marketing spend increases.",
+  "duration": "2 weeks",
+  "settlementDuration": "1 month",
+  "settlementType": "exponential",
+  "affectedStreams": {
+    "customer.signup.completed": {
+      "multiplier": 0.6,
+      "description": "New signups decrease 40%"
+    },
+    "customer.tutor.search": {
+      "multiplier": 0.8,
+      "description": "Searches decrease 20%"
+    },
+    "session.booking.requested": {
+      "multiplier": 0.75,
+      "description": "Booking requests decrease 25%"
+    },
+    "marketing.ad.spend": {
+      "multiplier": 1.5,
+      "description": "Marketing spend increases 50% (increased competition)"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "customer.signup.completed",
+      "effect": {
+        "customer.tutor.search": {
+          "multiplier": 0.9,
+          "delay": "0-7 days",
+          "description": "Fewer signups lead to fewer searches"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_competitor_launched_major",
+      "timestamp": "now",
+      "type": "competitive",
+      "title": "Competitor launched",
+      "description": "Major competitor launched similar marketplace platform",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["customer.signup.completed", "session.booking.requested"],
+        "direction": "decrease",
+        "magnitude": "high",
+        "duration": "1 month"
+      },
+      "icon": "🏢",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_competitor_funding",
+      "timestamp": "now",
+      "type": "competitive",
+      "title": "Competitor raised funding",
+      "description": "Competitor raised significant funding, increasing marketing presence",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["customer.signup.completed", "marketing.ad.spend"],
+        "direction": "mixed",
+        "magnitude": "medium",
+        "duration": "2 months"
+      },
+      "icon": "💰",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_industry_report",
+      "timestamp": "+3 days",
+      "type": "competitive",
+      "title": "Industry report published",
+      "description": "Industry report highlights competitor advantages",
+      "severity": "info",
+      "expectedImpact": {
+        "streams": ["customer.signup.completed"],
+        "direction": "decrease",
+        "magnitude": "low",
+        "duration": "1 week"
+      },
+      "icon": "📊",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "competitive",
+    "tags": ["competitive", "market", "high-impact"],
+    "typicalTrigger": "Competitor launches, funding rounds"
+  }
+}
+

@@ -1,0 +1,473 @@
+{
+  "_documentation": {
+    "purpose": "Defines external event type templates (marketing, product, infrastructure, academic, competitive, operational) with expected impacts. Used to create events for scenarios or manual injection.",
+    "usage": "Loaded by ExternalEventsManager. Scenarios inject events from this library. Admin UI can create events from templates.",
+    "example": "When scenario injects 'IB Exam Season begins', ExternalEventsManager uses eventTypes.academic.templates.ib_exam_season to create the event with expected impact on customer.tutor.search and session.booking.requested."
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "External event types and templates for the marketplace simulation",
+    "lastUpdated": "2025-01-15"
+  },
+  "eventTypes": {
+    "marketing": {
+      "name": "Marketing/Growth",
+      "description": "Marketing campaigns, viral content, influencer activity",
+      "icon": "📢",
+      "severityOptions": ["info", "warning"],
+      "templates": [
+        {
+          "id": "blog_viral",
+          "title": "Blog post goes viral",
+          "description": "Company blog post receives significant traffic and media attention",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 week"
+          },
+          "icon": "📝",
+          "typicalTiming": "Random, often after content publication"
+        },
+        {
+          "id": "tiktok_mention",
+          "title": "TikTok mention",
+          "description": "Platform mentioned in popular TikTok video",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "3 days"
+          },
+          "icon": "🎵",
+          "typicalTiming": "Random, viral content"
+        },
+        {
+          "id": "podcast_sponsorship",
+          "title": "Podcast sponsorship",
+          "description": "Platform sponsors popular educational podcast",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed"],
+            "direction": "increase",
+            "magnitude": "low",
+            "duration": "2 weeks"
+          },
+          "icon": "🎙️",
+          "typicalTiming": "Scheduled campaign"
+        },
+        {
+          "id": "ad_campaign_launch",
+          "title": "Ad campaign launch",
+          "description": "New marketing campaign launched across multiple platforms",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "marketing.ad.spend"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "📢",
+          "typicalTiming": "Scheduled campaign start"
+        },
+        {
+          "id": "competitor_launch",
+          "title": "Competitor launched",
+          "description": "Major competitor launches similar marketplace platform",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "high",
+            "duration": "1 month"
+          },
+          "icon": "🏢",
+          "typicalTiming": "Random, market events"
+        },
+        {
+          "id": "influencer_endorsement",
+          "title": "Influencer endorsement",
+          "description": "Popular educator or influencer endorses platform",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 week"
+          },
+          "icon": "⭐",
+          "typicalTiming": "Scheduled partnership"
+        }
+      ]
+    },
+    "product": {
+      "name": "Product/Platform",
+      "description": "Product launches, feature releases, platform changes",
+      "icon": "🚀",
+      "severityOptions": ["info", "warning", "critical"],
+      "templates": [
+        {
+          "id": "app_launch",
+          "title": "Mobile app launch",
+          "description": "New mobile app released on iOS and Android",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.login.success"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "📱",
+          "typicalTiming": "Scheduled release"
+        },
+        {
+          "id": "feature_release",
+          "title": "Feature release",
+          "description": "Major new feature released to all users",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.login.success", "session.booking.requested"],
+            "direction": "increase",
+            "magnitude": "low",
+            "duration": "1 week"
+          },
+          "icon": "✨",
+          "typicalTiming": "Scheduled release"
+        },
+        {
+          "id": "ui_redesign",
+          "title": "UI redesign",
+          "description": "Platform UI redesigned with new interface",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.login.success", "support.ticket.created"],
+            "direction": "mixed",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "🎨",
+          "typicalTiming": "Scheduled release"
+        },
+        {
+          "id": "pricing_change",
+          "title": "Pricing change",
+          "description": "Subscription pricing updated (increase or decrease)",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.subscription.plan_changed", "customer.subscription.payment_failure"],
+            "direction": "mixed",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "💰",
+          "typicalTiming": "Scheduled announcement"
+        },
+        {
+          "id": "new_payment_method",
+          "title": "New payment method",
+          "description": "New payment option added (e.g., PayPal, Apple Pay)",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.subscription.payment_success", "customer.signup.completed"],
+            "direction": "increase",
+            "magnitude": "low",
+            "duration": "1 month"
+          },
+          "icon": "💳",
+          "typicalTiming": "Scheduled release"
+        }
+      ]
+    },
+    "infrastructure": {
+      "name": "External/Infrastructure",
+      "description": "Third-party service outages, infrastructure issues",
+      "icon": "⚙️",
+      "severityOptions": ["warning", "critical"],
+      "templates": [
+        {
+          "id": "aws_outage",
+          "title": "AWS outage",
+          "description": "Amazon Web Services experiencing regional outage",
+          "severity": "critical",
+          "expectedImpact": {
+            "streams": ["api.request.log", "system.error.log", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "high",
+            "duration": "2 hours"
+          },
+          "icon": "☁️",
+          "externalLink": "https://status.aws.amazon.com",
+          "typicalTiming": "Random, infrastructure events"
+        },
+        {
+          "id": "stripe_rate_limiting",
+          "title": "Stripe rate limiting",
+          "description": "Payment gateway rate limiting affecting payment processing",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["payment_gateway.transaction.status", "customer.subscription.payment_failure"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 hour"
+          },
+          "icon": "💳",
+          "externalLink": "https://status.stripe.com",
+          "typicalTiming": "Random, during high traffic"
+        },
+        {
+          "id": "weather_event",
+          "title": "Weather event",
+          "description": "Severe weather affecting multiple regions",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["session.started", "session.completed", "session.cancellation.by_student"],
+            "direction": "decrease",
+            "magnitude": "low",
+            "duration": "1 day"
+          },
+          "icon": "🌧️",
+          "typicalTiming": "Seasonal, weather events"
+        },
+        {
+          "id": "school_holidays",
+          "title": "School holidays",
+          "description": "Major school holiday period (e.g., spring break, winter break)",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "1 week"
+          },
+          "icon": "🎉",
+          "typicalTiming": "Scheduled, academic calendar"
+        },
+        {
+          "id": "internet_outage",
+          "title": "Internet outage",
+          "description": "Major ISP experiencing widespread outages",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["api.request.log", "session.started", "session.completed"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "4 hours"
+          },
+          "icon": "📡",
+          "typicalTiming": "Random, infrastructure events"
+        }
+      ]
+    },
+    "academic": {
+      "name": "Academic Calendar",
+      "description": "Academic calendar events affecting demand",
+      "icon": "📅",
+      "severityOptions": ["info", "warning"],
+      "templates": [
+        {
+          "id": "ib_exam_season",
+          "title": "IB Exam Season",
+          "description": "International Baccalaureate exam period begins",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "3 weeks"
+          },
+          "icon": "📅",
+          "externalLink": "https://ibo.org/exam-schedule",
+          "typicalTiming": "May, November-December"
+        },
+        {
+          "id": "sat_exams",
+          "title": "SAT exams",
+          "description": "SAT exam dates approaching",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "📝",
+          "externalLink": "https://collegereadiness.collegeboard.org/sat/register/dates-deadlines",
+          "typicalTiming": "March, May, June, August, October, November, December"
+        },
+        {
+          "id": "school_year_start",
+          "title": "School year start",
+          "description": "New academic year begins",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "🎓",
+          "typicalTiming": "August-September"
+        },
+        {
+          "id": "finals_week",
+          "title": "Finals week",
+          "description": "University and high school final exams period",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "1 week"
+          },
+          "icon": "📚",
+          "typicalTiming": "December, May"
+        },
+        {
+          "id": "summer_break",
+          "title": "Summer break",
+          "description": "Summer vacation period begins",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "3 months"
+          },
+          "icon": "☀️",
+          "typicalTiming": "June-August"
+        }
+      ]
+    },
+    "competitive": {
+      "name": "Competitive/Market",
+      "description": "Competitor actions, market changes, industry reports",
+      "icon": "🏢",
+      "severityOptions": ["info", "warning"],
+      "templates": [
+        {
+          "id": "competitor_funding",
+          "title": "Competitor raised funding",
+          "description": "Major competitor raised significant funding round",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "marketing.ad.spend"],
+            "direction": "mixed",
+            "magnitude": "medium",
+            "duration": "2 months"
+          },
+          "icon": "💰",
+          "typicalTiming": "Random, market events"
+        },
+        {
+          "id": "competitor_shutdown",
+          "title": "Competitor shutdown",
+          "description": "Major competitor shuts down operations",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "💀",
+          "typicalTiming": "Random, market events"
+        },
+        {
+          "id": "industry_report",
+          "title": "Industry report published",
+          "description": "Major industry report published about online tutoring market",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "mixed",
+            "magnitude": "low",
+            "duration": "1 week"
+          },
+          "icon": "📊",
+          "typicalTiming": "Scheduled, quarterly/annual reports"
+        },
+        {
+          "id": "regulatory_changes",
+          "title": "Regulatory changes",
+          "description": "New regulations affecting online tutoring industry",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["tutor.application.received", "tutor.onboarding.approved"],
+            "direction": "mixed",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "⚖️",
+          "typicalTiming": "Scheduled, regulatory announcements"
+        }
+      ]
+    },
+    "operational": {
+      "name": "Internal Operational",
+      "description": "Internal operational changes, team changes, process updates",
+      "icon": "🔧",
+      "severityOptions": ["info", "warning"],
+      "templates": [
+        {
+          "id": "tutor_training_completion",
+          "title": "Tutor training completion",
+          "description": "New tutor training program completed, improving quality",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["session.rating.submitted_by_student", "session.no_show.tutor"],
+            "direction": "decrease",
+            "magnitude": "low",
+            "duration": "1 month"
+          },
+          "icon": "📚",
+          "typicalTiming": "Scheduled, program completion"
+        },
+        {
+          "id": "support_hours_change",
+          "title": "Support hours change",
+          "description": "Support team hours extended or reduced",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["support.ticket.resolved", "support.call.inbound"],
+            "direction": "mixed",
+            "magnitude": "low",
+            "duration": "Ongoing"
+          },
+          "icon": "🕐",
+          "typicalTiming": "Scheduled, operational changes"
+        },
+        {
+          "id": "new_pricing_tier",
+          "title": "New pricing tier",
+          "description": "New subscription tier introduced",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.subscription.plan_changed", "customer.signup.completed"],
+            "direction": "increase",
+            "magnitude": "low",
+            "duration": "1 month"
+          },
+          "icon": "💎",
+          "typicalTiming": "Scheduled, product release"
+        },
+        {
+          "id": "referral_program_launch",
+          "title": "Referral program launch",
+          "description": "New customer referral program launched",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "customer.tutor.search"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "🎁",
+          "typicalTiming": "Scheduled, marketing campaign"
+        }
+      ]
+    }
+  }
+}
+

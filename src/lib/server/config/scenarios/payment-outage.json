@@ -1,0 +1,89 @@
+{
+  "_documentation": {
+    "purpose": "Simulates payment gateway failure. Payment processing fails, triggering support tickets and potential downgrades.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Payment Gateway Outage' scenario.",
+    "example": "When activated, payment_gateway.transaction.status is forced to 95% failure rate (override), customer.subscription.payment_failure increases 500% (multiplier 6.0)."
+  },
+  "id": "payment-outage",
+  "name": "Payment Gateway Outage",
+  "description": "Simulates payment gateway failure. Payment processing fails, triggering support tickets and potential downgrades.",
+  "duration": "2 hours",
+  "settlementDuration": "2 hours",
+  "settlementType": "immediate",
+  "affectedStreams": {
+    "payment_gateway.transaction.status": {
+      "override": 95,
+      "description": "Force 95% failure rate (simulating outage)"
+    },
+    "customer.subscription.payment_failure": {
+      "multiplier": 6.0,
+      "description": "Payment failures increase 500%"
+    },
+    "support.ticket.created": {
+      "multiplier": 3.0,
+      "description": "Support tickets increase 200% (billing category)"
+    },
+    "customer.subscription.plan_changed": {
+      "multiplier": 2.5,
+      "description": "Downgrades increase 150%"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "customer.subscription.payment_failure",
+      "effect": {
+        "support.ticket.created": {
+          "multiplier": 1.5,
+          "delay": "1-6 hours",
+          "description": "Payment failures trigger billing support tickets"
+        },
+        "customer.subscription.plan_changed": {
+          "multiplier": 1.3,
+          "delay": "24-72 hours",
+          "description": "Some customers downgrade after payment issues"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_stripe_outage",
+      "timestamp": "now",
+      "type": "infrastructure",
+      "title": "Stripe API outage",
+      "description": "Payment gateway experiencing widespread API failures, affecting all payment processing",
+      "severity": "critical",
+      "expectedImpact": {
+        "streams": ["payment_gateway.transaction.status", "customer.subscription.payment_failure"],
+        "direction": "increase",
+        "magnitude": "high",
+        "duration": "2 hours"
+      },
+      "icon": "💳",
+      "externalLink": "https://status.stripe.com",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_payment_maintenance",
+      "timestamp": "+1 hour",
+      "type": "infrastructure",
+      "title": "Payment gateway maintenance",
+      "description": "Scheduled maintenance window affecting payment processing",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["payment_gateway.transaction.status"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "1 hour"
+      },
+      "icon": "🔧",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "infrastructure",
+    "tags": ["payment", "critical", "infrastructure"],
+    "typicalTrigger": "Third-party service outage"
+  }
+}
+

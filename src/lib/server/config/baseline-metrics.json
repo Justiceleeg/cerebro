@@ -1,0 +1,416 @@
+{
+	"_documentation": {
+		"purpose": "Defines baseline rates, conversion rates, volume targets, and patterns for all 50 streams. Used by StreamGenerator to generate realistic data.",
+		"usage": "Loaded at startup. Used during historical data generation (Phase 2.1) and real-time stream generation (Phase 3.1).",
+		"example": "When generating a booking event, use conversionRates.bookingRequestedToConfirmed.average (0.75) to determine 75% confirmation rate."
+	},
+	"metadata": {
+		"version": "1.0.0",
+		"description": "Baseline rates and metrics for all 50 streams in the marketplace simulation",
+		"lastUpdated": "2025-01-15"
+	},
+	"volumeTargets": {
+		"_documentation": "Overall platform volume targets. Used to scale stream baselines proportionally.",
+		"_example": "If totalStudents is 50000 and studentsPerTutor.average is 6.25, we expect ~8000 tutors to maintain this ratio.",
+		"totalStudents": 50000,
+		"totalTutors": 8000,
+		"studentsPerTutor": {
+			"min": 1,
+			"max": 8,
+			"average": 6.25
+		},
+		"sessionsPerTutorPerDay": {
+			"min": 1,
+			"max": 8,
+			"average": 3
+		},
+		"totalSessionsPerDay": 24000
+	},
+	"conversionRates": {
+		"_documentation": "Conversion rates between related events. Used to determine probability of event chains (e.g., signup.started → signup.completed).",
+		"_example": "signupStartedToCompleted.average (0.40) means 40% of signup.started events should result in signup.completed events.",
+		"signupStartedToCompleted": {
+			"min": 0.30,
+			"max": 0.50,
+			"average": 0.40
+		},
+		"bookingRequestedToConfirmed": {
+			"min": 0.70,
+			"max": 0.80,
+			"average": 0.75
+		},
+		"bookingRequestedToDeclined": {
+			"min": 0.10,
+			"max": 0.20,
+			"average": 0.15
+		},
+		"bookingRequestedToExpired": {
+			"min": 0.05,
+			"max": 0.10,
+			"average": 0.075
+		},
+		"searchToBookingRequested": {
+			"min": 0.20,
+			"max": 0.40,
+			"average": 0.30
+		},
+		"adClickToApplication": {
+			"min": 0.10,
+			"max": 0.30,
+			"average": 0.20
+		},
+		"applicationToApproved": {
+			"min": 0.20,
+			"max": 0.40,
+			"average": 0.30
+		},
+		"sessionCompletedToRating": {
+			"min": 0.40,
+			"max": 0.60,
+			"average": 0.50
+		}
+	},
+	"noShowRates": {
+		"studentNoShow": {
+			"min": 0.02,
+			"max": 0.05,
+			"average": 0.035
+		},
+		"tutorNoShow": {
+			"min": 0.01,
+			"max": 0.02,
+			"average": 0.015
+		}
+	},
+	"churnRates": {
+		"monthlyChurnRate": {
+			"min": 0.03,
+			"max": 0.08,
+			"average": 0.05
+		},
+		"byCohort": {
+			"2024_q1": 0.04,
+			"2024_q2": 0.05,
+			"2024_q3": 0.06,
+			"2024_q4": 0.05,
+			"2025_q1": 0.03
+		}
+	},
+	"supportMetrics": {
+		"ticketResolutionTimeHours": {
+			"min": 1,
+			"max": 24,
+			"average": 6,
+			"p50": 4,
+			"p75": 8,
+			"p90": 12
+		},
+		"paymentFailureToTicketRate": 0.30,
+		"noShowToTicketRate": 0.25
+	},
+	"firstSessionSuccessRate": {
+		"min": 0.85,
+		"max": 0.95,
+		"average": 0.90
+	},
+	"growthRates": {
+		"monthlyGrowthRate": {
+			"min": 0.02,
+			"max": 0.05,
+			"average": 0.035
+		},
+		"annualGrowthRate": 0.50
+	},
+	"seasonalMultipliers": {
+		"examSeason": {
+			"months": [
+				5,
+				11,
+				12
+			],
+			"multiplier": 1.4,
+			"description": "May, November, December - exam seasons"
+		},
+		"summer": {
+			"months": [
+				6,
+				7,
+				8
+			],
+			"multiplier": 0.75,
+			"description": "June, July, August - summer break"
+		},
+		"backToSchool": {
+			"months": [
+				9
+			],
+			"multiplier": 1.2,
+			"description": "September - back to school"
+		},
+		"holidays": {
+			"months": [
+				12
+			],
+			"weeks": [
+				51,
+				52
+			],
+			"multiplier": 0.50,
+			"description": "Holiday weeks - reduced activity"
+		}
+	},
+	"timeOfDayPatterns": {
+		"peakHours": {
+			"start": 8,
+			"end": 22,
+			"multiplier": 1.5,
+			"description": "8am-10pm peak activity"
+		},
+		"offHours": {
+			"start": 23,
+			"end": 7,
+			"multiplier": 0.2,
+			"description": "11pm-7am minimal activity"
+		}
+	},
+	"dayOfWeekPatterns": {
+		"weekend": {
+			"days": [
+				0,
+				6
+			],
+			"multiplier": 1.35,
+			"description": "Saturday and Sunday - 35% more sessions"
+		},
+		"weekday": {
+			"days": [
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"multiplier": 1.0,
+			"description": "Monday-Friday baseline"
+		}
+	},
+	"streamBaselines": {
+		"_documentation": "Baseline event rates for each of the 50 streams. Used to generate realistic event volumes. eventsPerDay is the target daily volume, eventsPerHour is calculated for scheduling.",
+		"_example": "customer.tutor.search has 8000 eventsPerDay, meaning ~333 events/hour. StreamGenerator uses this to schedule event checks.",
+		"customer.signup.started": {
+			"eventsPerDay": 500,
+			"eventsPerHour": 20.8
+		},
+		"customer.signup.completed": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3,
+			"conversionRate": 0.40
+		},
+		"customer.login.success": {
+			"eventsPerDay": 15000,
+			"eventsPerHour": 625
+		},
+		"customer.login.failure": {
+			"eventsPerDay": 300,
+			"eventsPerHour": 12.5,
+			"failureRate": 0.02
+		},
+		"customer.profile.update": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3
+		},
+		"customer.subscription.plan_changed": {
+			"eventsPerDay": 50,
+			"eventsPerHour": 2.1
+		},
+		"customer.subscription.payment_success": {
+			"eventsPerDay": 1200,
+			"eventsPerHour": 50
+		},
+		"customer.subscription.payment_failure": {
+			"eventsPerDay": 60,
+			"eventsPerHour": 2.5,
+			"failureRate": 0.05
+		},
+		"customer.page.view": {
+			"eventsPerDay": 200000,
+			"eventsPerHour": 8333
+		},
+		"customer.tutor.search": {
+			"eventsPerDay": 8000,
+			"eventsPerHour": 333
+		},
+		"tutor.application.received": {
+			"eventsPerDay": 50,
+			"eventsPerHour": 2.1
+		},
+		"tutor.onboarding.step_completed": {
+			"eventsPerDay": 30,
+			"eventsPerHour": 1.25
+		},
+		"tutor.onboarding.approved": {
+			"eventsPerDay": 15,
+			"eventsPerHour": 0.625
+		},
+		"tutor.onboarding.rejected": {
+			"eventsPerDay": 20,
+			"eventsPerHour": 0.83
+		},
+		"tutor.availability.set": {
+			"eventsPerDay": 2000,
+			"eventsPerHour": 83.3
+		},
+		"tutor.availability.batch_updated": {
+			"eventsPerDay": 100,
+			"eventsPerHour": 4.2
+		},
+		"tutor.login.event": {
+			"eventsPerDay": 3000,
+			"eventsPerHour": 125
+		},
+		"tutor.profile.viewed_by_student": {
+			"eventsPerDay": 12000,
+			"eventsPerHour": 500
+		},
+		"tutor.payout.initiated": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3
+		},
+		"tutor.status.changed": {
+			"eventsPerDay": 50,
+			"eventsPerHour": 2.1
+		},
+		"session.booking.requested": {
+			"eventsPerDay": 2400,
+			"eventsPerHour": 100
+		},
+		"session.booking.confirmed": {
+			"eventsPerDay": 1800,
+			"eventsPerHour": 75,
+			"confirmationRate": 0.75
+		},
+		"session.booking.declined_by_tutor": {
+			"eventsPerDay": 360,
+			"eventsPerHour": 15,
+			"declineRate": 0.15
+		},
+		"session.booking.expired": {
+			"eventsPerDay": 180,
+			"eventsPerHour": 7.5,
+			"expirationRate": 0.075
+		},
+		"session.cancellation.by_student": {
+			"eventsPerDay": 90,
+			"eventsPerHour": 3.75,
+			"cancellationRate": 0.05
+		},
+		"session.cancellation.by_tutor": {
+			"eventsPerDay": 18,
+			"eventsPerHour": 0.75,
+			"cancellationRate": 0.01
+		},
+		"session.started": {
+			"eventsPerDay": 1700,
+			"eventsPerHour": 70.8
+		},
+		"session.completed": {
+			"eventsPerDay": 1650,
+			"eventsPerHour": 68.75
+		},
+		"session.no_show.student": {
+			"eventsPerDay": 60,
+			"eventsPerHour": 2.5,
+			"noShowRate": 0.035
+		},
+		"session.no_show.tutor": {
+			"eventsPerDay": 25,
+			"eventsPerHour": 1.04,
+			"noShowRate": 0.015
+		},
+		"session.rating.submitted_by_student": {
+			"eventsPerDay": 825,
+			"eventsPerHour": 34.4,
+			"ratingRate": 0.50
+		},
+		"session.feedback.submitted_by_tutor": {
+			"eventsPerDay": 990,
+			"eventsPerHour": 41.25,
+			"feedbackRate": 0.60
+		},
+		"support.call.inbound": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3
+		},
+		"support.call.outbound": {
+			"eventsPerDay": 30,
+			"eventsPerHour": 1.25
+		},
+		"support.ticket.created": {
+			"eventsPerDay": 300,
+			"eventsPerHour": 12.5
+		},
+		"support.ticket.updated": {
+			"eventsPerDay": 900,
+			"eventsPerHour": 37.5
+		},
+		"support.ticket.resolved": {
+			"eventsPerDay": 300,
+			"eventsPerHour": 12.5,
+			"averageResolutionHours": 6
+		},
+		"support.live_chat.started": {
+			"eventsPerDay": 500,
+			"eventsPerHour": 20.8
+		},
+		"support.live_chat.message": {
+			"eventsPerDay": 5000,
+			"eventsPerHour": 208.3
+		},
+		"support.refund.requested": {
+			"eventsPerDay": 10,
+			"eventsPerHour": 0.42
+		},
+		"marketing.ad.spend": {
+			"eventsPerDay": 50,
+			"eventsPerHour": 2.1
+		},
+		"marketing.ad.impression": {
+			"eventsPerDay": 50000,
+			"eventsPerHour": 2083
+		},
+		"marketing.ad.click": {
+			"eventsPerDay": 2500,
+			"eventsPerHour": 104.2
+		},
+		"marketing.ad.conversion": {
+			"eventsPerDay": 500,
+			"eventsPerHour": 20.8
+		},
+		"seo.organic.traffic": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3
+		},
+		"api.request.log": {
+			"eventsPerDay": 1000000,
+			"eventsPerHour": 41667
+		},
+		"system.error.log": {
+			"eventsPerDay": 100,
+			"eventsPerHour": 4.2
+		},
+		"database.query.performance": {
+			"eventsPerDay": 200,
+			"eventsPerHour": 8.3
+		},
+		"platform.concurrent.users": {
+			"eventsPerDay": 288,
+			"eventsPerHour": 12,
+			"snapshotIntervalMinutes": 5
+		},
+		"payment_gateway.transaction.status": {
+			"eventsPerDay": 1300,
+			"eventsPerHour": 54.2,
+			"successRate": 0.95
+		}
+	}
+}

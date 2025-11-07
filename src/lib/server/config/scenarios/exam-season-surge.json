@@ -1,0 +1,68 @@
+{
+  "_documentation": {
+    "purpose": "Simulates increased demand during exam season (IB, SAT, finals). Demand increases significantly while supply may become constrained.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Exam Season Surge' scenario. Applies multipliers to streams and injects external events.",
+    "example": "When activated, customer.tutor.search increases 60% (multiplier 1.6), session.booking.requested increases 50% (multiplier 1.5), and 'IB Exam Season begins' event is injected."
+  },
+  "id": "exam-season-surge",
+  "name": "Exam Season Surge",
+  "description": "Simulates increased demand during exam season (IB, SAT, finals). Demand increases significantly while supply may become constrained.",
+  "duration": "3 hours",
+  "settlementDuration": "6 hours",
+  "settlementType": "linear",
+  "affectedStreams": {
+    "customer.tutor.search": {
+      "multiplier": 1.6,
+      "description": "Search volume increases 60%"
+    },
+    "session.booking.requested": {
+      "multiplier": 1.5,
+      "description": "Booking requests increase 50%"
+    },
+    "session.booking.expired": {
+      "multiplier": 1.8,
+      "description": "More bookings expire due to supply shortage"
+    },
+    "tutor.availability.set": {
+      "multiplier": 0.9,
+      "description": "Tutor availability decreases 10% (some tutors already booked)"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "session.booking.expired",
+      "effect": {
+        "support.ticket.created": {
+          "multiplier": 1.3,
+          "delay": "1-6 hours",
+          "description": "Expired bookings lead to support tickets"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_exam_season_ib",
+      "timestamp": "now",
+      "type": "academic",
+      "title": "IB Exam Season begins",
+      "description": "International Baccalaureate exam period starts, driving increased demand for tutoring",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["customer.tutor.search", "session.booking.requested"],
+        "direction": "increase",
+        "magnitude": "high",
+        "duration": "3 weeks"
+      },
+      "icon": "📅",
+      "externalLink": "https://ibo.org/exam-schedule",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "demand-surge",
+    "tags": ["academic", "seasonal", "high-impact"],
+    "typicalTrigger": "Exam season (May, Nov-Dec)"
+  }
+}
+

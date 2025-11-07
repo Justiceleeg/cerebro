@@ -1,0 +1,696 @@
+{
+  "_documentation": {
+    "purpose": "DEPRECATED: This file has been split into individual scenario files. See scenarios/ directory for individual scenario files and scenarios/index.json for the scenario index.",
+    "migration": "Scenarios are now in src/lib/config/scenarios/ directory, one file per scenario. Use scenarios/index.json to list all scenarios, then load individual scenario files on-demand.",
+    "example": "To load 'exam-season-surge' scenario, read scenarios/exam-season-surge.json instead of this file."
+  },
+  "_deprecated": true,
+  "_migration_note": "This file is kept for backward compatibility but scenarios should be loaded from scenarios/ directory",
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Pre-defined scenario configurations for the marketplace simulation (DEPRECATED - see scenarios/ directory)",
+    "lastUpdated": "2025-01-15"
+  },
+  "scenarios": [
+    {
+      "id": "exam-season-surge",
+      "name": "Exam Season Surge",
+      "description": "Simulates increased demand during exam season (IB, SAT, finals). Demand increases significantly while supply may become constrained.",
+      "duration": "3 hours",
+      "settlementDuration": "6 hours",
+      "settlementType": "linear",
+      "affectedStreams": {
+        "customer.tutor.search": {
+          "multiplier": 1.6,
+          "description": "Search volume increases 60%"
+        },
+        "session.booking.requested": {
+          "multiplier": 1.5,
+          "description": "Booking requests increase 50%"
+        },
+        "session.booking.expired": {
+          "multiplier": 1.8,
+          "description": "More bookings expire due to supply shortage"
+        },
+        "tutor.availability.set": {
+          "multiplier": 0.9,
+          "description": "Tutor availability decreases 10% (some tutors already booked)"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "session.booking.expired",
+          "effect": {
+            "support.ticket.created": {
+              "multiplier": 1.3,
+              "delay": "1-6 hours",
+              "description": "Expired bookings lead to support tickets"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_exam_season_ib",
+          "timestamp": "now",
+          "type": "academic",
+          "title": "IB Exam Season begins",
+          "description": "International Baccalaureate exam period starts, driving increased demand for tutoring",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.tutor.search", "session.booking.requested"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "3 weeks"
+          },
+          "icon": "📅",
+          "externalLink": "https://ibo.org/exam-schedule",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "demand-surge",
+        "tags": ["academic", "seasonal", "high-impact"],
+        "typicalTrigger": "Exam season (May, Nov-Dec)"
+      }
+    },
+    {
+      "id": "supply-crisis",
+      "name": "Supply Crisis",
+      "description": "Simulates tutor supply shortage. Many tutors become unavailable, leading to booking failures and increased search activity.",
+      "duration": "4 hours",
+      "settlementDuration": "8 hours",
+      "settlementType": "linear",
+      "affectedStreams": {
+        "tutor.availability.set": {
+          "multiplier": 0.6,
+          "description": "Tutor availability decreases 40%"
+        },
+        "tutor.status.changed": {
+          "multiplier": 3.0,
+          "description": "Tutors going inactive increases 200%"
+        },
+        "session.booking.expired": {
+          "multiplier": 2.5,
+          "description": "Booking expirations increase 150% due to supply shortage"
+        },
+        "customer.tutor.search": {
+          "multiplier": 1.2,
+          "description": "Students search more when supply is constrained"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "session.booking.expired",
+          "effect": {
+            "support.ticket.created": {
+              "multiplier": 1.4,
+              "delay": "1-6 hours",
+              "description": "Expired bookings lead to frustrated students"
+            },
+            "customer.tutor.search": {
+              "multiplier": 1.1,
+              "delay": "0-2 hours",
+              "description": "Students search again after expiration"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_tutors_vacation",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Top tutors on vacation",
+          "description": "Many high-performing tutors are on vacation simultaneously, reducing available supply",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["tutor.availability.set", "session.booking.expired"],
+            "direction": "decrease",
+            "magnitude": "high",
+            "duration": "1 week"
+          },
+          "icon": "🏖️",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_recruiting_dry",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Recruiting pipeline dry",
+          "description": "New tutor applications have slowed significantly, reducing new supply",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["tutor.application.received", "tutor.onboarding.approved"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "📉",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "supply-shortage",
+        "tags": ["operational", "supply", "high-impact"],
+        "typicalTrigger": "Holiday periods, recruiting issues"
+      }
+    },
+    {
+      "id": "payment-outage",
+      "name": "Payment Gateway Outage",
+      "description": "Simulates payment gateway failure. Payment processing fails, triggering support tickets and potential downgrades.",
+      "duration": "2 hours",
+      "settlementDuration": "2 hours",
+      "settlementType": "immediate",
+      "affectedStreams": {
+        "payment_gateway.transaction.status": {
+          "override": 95,
+          "description": "Force 95% failure rate (simulating outage)"
+        },
+        "customer.subscription.payment_failure": {
+          "multiplier": 6.0,
+          "description": "Payment failures increase 500%"
+        },
+        "support.ticket.created": {
+          "multiplier": 3.0,
+          "description": "Support tickets increase 200% (billing category)"
+        },
+        "customer.subscription.plan_changed": {
+          "multiplier": 2.5,
+          "description": "Downgrades increase 150%"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "customer.subscription.payment_failure",
+          "effect": {
+            "support.ticket.created": {
+              "multiplier": 1.5,
+              "delay": "1-6 hours",
+              "description": "Payment failures trigger billing support tickets"
+            },
+            "customer.subscription.plan_changed": {
+              "multiplier": 1.3,
+              "delay": "24-72 hours",
+              "description": "Some customers downgrade after payment issues"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_stripe_outage",
+          "timestamp": "now",
+          "type": "infrastructure",
+          "title": "Stripe API outage",
+          "description": "Payment gateway experiencing widespread API failures, affecting all payment processing",
+          "severity": "critical",
+          "expectedImpact": {
+            "streams": ["payment_gateway.transaction.status", "customer.subscription.payment_failure"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "2 hours"
+          },
+          "icon": "💳",
+          "externalLink": "https://status.stripe.com",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_payment_maintenance",
+          "timestamp": "+1 hour",
+          "type": "infrastructure",
+          "title": "Payment gateway maintenance",
+          "description": "Scheduled maintenance window affecting payment processing",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["payment_gateway.transaction.status"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "1 hour"
+          },
+          "icon": "🔧",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "infrastructure",
+        "tags": ["payment", "critical", "infrastructure"],
+        "typicalTrigger": "Third-party service outage"
+      }
+    },
+    {
+      "id": "quality-crisis",
+      "name": "Quality Crisis",
+      "description": "Simulates quality degradation. Tutor no-shows and cancellations spike, leading to refunds and support tickets.",
+      "duration": "1 day",
+      "settlementDuration": "1 week",
+      "settlementType": "exponential",
+      "affectedStreams": {
+        "session.no_show.tutor": {
+          "multiplier": 4.0,
+          "description": "Tutor no-shows increase 300%"
+        },
+        "session.cancellation.by_tutor": {
+          "multiplier": 3.0,
+          "description": "Tutor cancellations increase 200%"
+        },
+        "session.rating.submitted_by_student": {
+          "multiplier": 0.7,
+          "description": "Rating submissions decrease 30% (lower engagement)"
+        },
+        "support.refund.requested": {
+          "multiplier": 5.0,
+          "description": "Refund requests increase 400%"
+        },
+        "support.ticket.created": {
+          "multiplier": 2.5,
+          "description": "Support tickets increase 150%"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "session.no_show.tutor",
+          "effect": {
+            "support.ticket.created": {
+              "multiplier": 1.5,
+              "delay": "0-2 hours",
+              "description": "Tutor no-shows trigger immediate support contact"
+            },
+            "support.refund.requested": {
+              "multiplier": 2.0,
+              "delay": "0-24 hours",
+              "description": "No-shows often lead to refund requests"
+            },
+            "customer.subscription.plan_changed": {
+              "multiplier": 1.2,
+              "delay": "24-72 hours",
+              "description": "Some students downgrade after poor experience"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_training_paused",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Tutor training program paused",
+          "description": "Quality training program temporarily suspended, leading to lower tutor standards",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["session.no_show.tutor", "session.cancellation.by_tutor"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "2 weeks"
+          },
+          "icon": "📚",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_quality_standards_lowered",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Quality standards lowered",
+          "description": "Tutor quality standards reduced to increase supply, affecting service quality",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["session.rating.submitted_by_student", "support.refund.requested"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "⚠️",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "quality",
+        "tags": ["quality", "tutors", "high-impact"],
+        "typicalTrigger": "Training issues, quality standards changes"
+      }
+    },
+    {
+      "id": "support-overload",
+      "name": "Support Overload",
+      "description": "Simulates support team overwhelmed. Ticket volume spikes while resolution times increase.",
+      "duration": "6 hours",
+      "settlementDuration": "12 hours",
+      "settlementType": "linear",
+      "affectedStreams": {
+        "support.ticket.created": {
+          "multiplier": 3.0,
+          "description": "Support tickets increase 200%"
+        },
+        "support.ticket.resolved": {
+          "multiplier": 0.7,
+          "description": "Resolution rate decreases 30% (slower resolution)"
+        },
+        "support.call.inbound": {
+          "multiplier": 2.5,
+          "description": "Inbound calls increase 150%"
+        },
+        "support.live_chat.started": {
+          "multiplier": 2.8,
+          "description": "Live chat sessions increase 180%"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "support.ticket.created",
+          "effect": {
+            "support.ticket.updated": {
+              "multiplier": 1.2,
+              "delay": "0-2 hours",
+              "description": "More tickets lead to more updates"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_support_team_reduced",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Support team reduced",
+          "description": "Support team headcount reduced, affecting response times",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["support.ticket.resolved", "support.call.inbound"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "👥",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_product_launch_issues",
+          "timestamp": "now",
+          "type": "product",
+          "title": "New product launch (more issues)",
+          "description": "Recent product launch introduced bugs, increasing support volume",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["support.ticket.created", "support.live_chat.started"],
+            "direction": "increase",
+            "magnitude": "high",
+            "duration": "1 week"
+          },
+          "icon": "🚀",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "support",
+        "tags": ["support", "operational", "medium-impact"],
+        "typicalTrigger": "Team changes, product issues"
+      }
+    },
+    {
+      "id": "churn-pattern",
+      "name": "Churn Pattern",
+      "description": "Simulates customer churn. Downgrades, payment failures, and reduced engagement indicate churn risk.",
+      "duration": "1 week",
+      "settlementDuration": "2 weeks",
+      "settlementType": "exponential",
+      "affectedStreams": {
+        "customer.subscription.plan_changed": {
+          "multiplier": 3.0,
+          "description": "Plan changes increase 200% (mostly downgrades)"
+        },
+        "customer.subscription.payment_failure": {
+          "multiplier": 2.5,
+          "description": "Payment failures increase 150%"
+        },
+        "support.call.inbound": {
+          "multiplier": 2.0,
+          "description": "Inbound calls increase 100% (≥2 calls = churn risk)"
+        },
+        "session.booking.requested": {
+          "multiplier": 0.7,
+          "description": "Booking requests decrease 30% (less engagement)"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "customer.subscription.payment_failure",
+          "effect": {
+            "customer.subscription.plan_changed": {
+              "multiplier": 1.3,
+              "delay": "24-72 hours",
+              "description": "Payment failures lead to downgrades"
+            }
+          }
+        },
+        {
+          "trigger": "support.call.inbound",
+          "effect": {
+            "customer.subscription.plan_changed": {
+              "multiplier": 1.2,
+              "delay": "0-7 days",
+              "condition": "count >= 2 in 14 days",
+              "description": "Multiple support calls indicate churn risk"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_competitor_launched",
+          "timestamp": "now",
+          "type": "competitive",
+          "title": "Competitor launched",
+          "description": "Major competitor launched similar service, attracting customers",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.subscription.plan_changed", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "1 month"
+          },
+          "icon": "🏢",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_pricing_increased",
+          "timestamp": "now",
+          "type": "product",
+          "title": "Pricing increased",
+          "description": "Subscription pricing increased, causing some customers to downgrade or cancel",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.subscription.plan_changed", "customer.subscription.payment_failure"],
+            "direction": "increase",
+            "magnitude": "medium",
+            "duration": "2 weeks"
+          },
+          "icon": "💰",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "churn",
+        "tags": ["churn", "competitive", "high-impact"],
+        "typicalTrigger": "Competitor actions, pricing changes"
+      }
+    },
+    {
+      "id": "recruiting-crisis",
+      "name": "Recruiting Crisis",
+      "description": "Simulates tutor recruiting problems. Application volume drops, reducing new tutor supply.",
+      "duration": "2 weeks",
+      "settlementDuration": "1 month",
+      "settlementType": "exponential",
+      "affectedStreams": {
+        "tutor.application.received": {
+          "multiplier": 0.5,
+          "description": "Tutor applications decrease 50%"
+        },
+        "tutor.onboarding.approved": {
+          "multiplier": 0.6,
+          "description": "Tutor approvals decrease 40%"
+        },
+        "marketing.ad.conversion": {
+          "multiplier": 0.7,
+          "description": "Ad conversions decrease 30%"
+        },
+        "tutor.availability.set": {
+          "multiplier": 0.8,
+          "description": "Available tutors decrease 20% (fewer new tutors)"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "tutor.application.received",
+          "effect": {
+            "tutor.onboarding.approved": {
+              "multiplier": 0.9,
+              "delay": "7-14 days",
+              "description": "Fewer applications lead to fewer approvals"
+            }
+          }
+        },
+        {
+          "trigger": "tutor.onboarding.approved",
+          "effect": {
+            "tutor.availability.set": {
+              "multiplier": 0.9,
+              "delay": "0-3 days",
+              "description": "Fewer new tutors means less availability"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_recruiting_budget_cut",
+          "timestamp": "now",
+          "type": "operational",
+          "title": "Recruiting budget cut",
+          "description": "Marketing budget for tutor recruitment significantly reduced",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["tutor.application.received", "marketing.ad.conversion"],
+            "direction": "decrease",
+            "magnitude": "high",
+            "duration": "1 month"
+          },
+          "icon": "📉",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_job_market_improved",
+          "timestamp": "now",
+          "type": "competitive",
+          "title": "Job market improved",
+          "description": "General job market improved, tutors finding other opportunities",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["tutor.application.received", "tutor.onboarding.approved"],
+            "direction": "decrease",
+            "magnitude": "medium",
+            "duration": "2 months"
+          },
+          "icon": "💼",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "recruiting",
+        "tags": ["recruiting", "supply", "medium-impact"],
+        "typicalTrigger": "Budget cuts, market conditions"
+      }
+    },
+    {
+      "id": "competitor-disruption",
+      "name": "Competitor Disruption",
+      "description": "Simulates competitor impact. New signups decrease, engagement drops, marketing spend increases.",
+      "duration": "2 weeks",
+      "settlementDuration": "1 month",
+      "settlementType": "exponential",
+      "affectedStreams": {
+        "customer.signup.completed": {
+          "multiplier": 0.6,
+          "description": "New signups decrease 40%"
+        },
+        "customer.tutor.search": {
+          "multiplier": 0.8,
+          "description": "Searches decrease 20%"
+        },
+        "session.booking.requested": {
+          "multiplier": 0.75,
+          "description": "Booking requests decrease 25%"
+        },
+        "marketing.ad.spend": {
+          "multiplier": 1.5,
+          "description": "Marketing spend increases 50% (increased competition)"
+        }
+      },
+      "cascadeEffects": [
+        {
+          "trigger": "customer.signup.completed",
+          "effect": {
+            "customer.tutor.search": {
+              "multiplier": 0.9,
+              "delay": "0-7 days",
+              "description": "Fewer signups lead to fewer searches"
+            }
+          }
+        }
+      ],
+      "externalEvents": [
+        {
+          "id": "evt_competitor_launched_major",
+          "timestamp": "now",
+          "type": "competitive",
+          "title": "Competitor launched",
+          "description": "Major competitor launched similar marketplace platform",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "session.booking.requested"],
+            "direction": "decrease",
+            "magnitude": "high",
+            "duration": "1 month"
+          },
+          "icon": "🏢",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_competitor_funding",
+          "timestamp": "now",
+          "type": "competitive",
+          "title": "Competitor raised funding",
+          "description": "Competitor raised significant funding, increasing marketing presence",
+          "severity": "warning",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed", "marketing.ad.spend"],
+            "direction": "mixed",
+            "magnitude": "medium",
+            "duration": "2 months"
+          },
+          "icon": "💰",
+          "injectedByAI": false
+        },
+        {
+          "id": "evt_industry_report",
+          "timestamp": "+3 days",
+          "type": "competitive",
+          "title": "Industry report published",
+          "description": "Industry report highlights competitor advantages",
+          "severity": "info",
+          "expectedImpact": {
+            "streams": ["customer.signup.completed"],
+            "direction": "decrease",
+            "magnitude": "low",
+            "duration": "1 week"
+          },
+          "icon": "📊",
+          "injectedByAI": false
+        }
+      ],
+      "metadata": {
+        "category": "competitive",
+        "tags": ["competitive", "market", "high-impact"],
+        "typicalTrigger": "Competitor launches, funding rounds"
+      }
+    },
+    {
+      "id": "normal-operations",
+      "name": "Normal Operations",
+      "description": "Reset to baseline. No modifications, all streams return to normal rates.",
+      "duration": "0",
+      "settlementDuration": "0",
+      "settlementType": "immediate",
+      "affectedStreams": {},
+      "cascadeEffects": [],
+      "externalEvents": [],
+      "metadata": {
+        "category": "baseline",
+        "tags": ["baseline", "reset"],
+        "typicalTrigger": "Reset button, return to baseline"
+      }
+    }
+  ]
+}
+

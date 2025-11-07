@@ -1,0 +1,78 @@
+{
+  "_documentation": {
+    "purpose": "Index of all available scenarios. Each scenario is defined in its own file in this directory.",
+    "usage": "Loaded by ScenarioEngine to list available scenarios. Individual scenario files are loaded on-demand when a scenario is activated.",
+    "example": "When admin requests scenario list, ScenarioEngine reads this index. When 'exam-season-surge' is activated, ScenarioEngine loads scenarios/exam-season-surge.json."
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Index of all pre-defined scenario configurations",
+    "lastUpdated": "2025-01-15"
+  },
+  "scenarios": [
+    {
+      "id": "exam-season-surge",
+      "name": "Exam Season Surge",
+      "file": "exam-season-surge.json",
+      "category": "demand-surge",
+      "tags": ["academic", "seasonal", "high-impact"]
+    },
+    {
+      "id": "supply-crisis",
+      "name": "Supply Crisis",
+      "file": "supply-crisis.json",
+      "category": "supply-shortage",
+      "tags": ["operational", "supply", "high-impact"]
+    },
+    {
+      "id": "payment-outage",
+      "name": "Payment Gateway Outage",
+      "file": "payment-outage.json",
+      "category": "infrastructure",
+      "tags": ["payment", "critical", "infrastructure"]
+    },
+    {
+      "id": "quality-crisis",
+      "name": "Quality Crisis",
+      "file": "quality-crisis.json",
+      "category": "quality",
+      "tags": ["quality", "tutors", "high-impact"]
+    },
+    {
+      "id": "support-overload",
+      "name": "Support Overload",
+      "file": "support-overload.json",
+      "category": "support",
+      "tags": ["support", "operational", "medium-impact"]
+    },
+    {
+      "id": "churn-pattern",
+      "name": "Churn Pattern",
+      "file": "churn-pattern.json",
+      "category": "churn",
+      "tags": ["churn", "competitive", "high-impact"]
+    },
+    {
+      "id": "recruiting-crisis",
+      "name": "Recruiting Crisis",
+      "file": "recruiting-crisis.json",
+      "category": "recruiting",
+      "tags": ["recruiting", "supply", "medium-impact"]
+    },
+    {
+      "id": "competitor-disruption",
+      "name": "Competitor Disruption",
+      "file": "competitor-disruption.json",
+      "category": "competitive",
+      "tags": ["competitive", "market", "high-impact"]
+    },
+    {
+      "id": "normal-operations",
+      "name": "Normal Operations",
+      "file": "normal-operations.json",
+      "category": "baseline",
+      "tags": ["baseline", "reset"]
+    }
+  ]
+}
+

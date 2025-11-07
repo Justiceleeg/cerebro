@@ -1,0 +1,546 @@
+{
+	"_documentation": {
+		"purpose": "Defines how streams connect - event chains, cascading effects, supply/demand correlations, temporal dependencies. Ensures realistic causal relationships between events.",
+		"usage": "Used by StreamGenerator to enforce event chains (e.g., booking.requested → confirmed/declined/expired) and apply cascading effects (e.g., payment failure → support ticket).",
+		"example": "When a booking.requested event occurs, use eventChains to determine: 75% → confirmed, 15% → declined, 7.5% → expired."
+	},
+	"metadata": {
+		"version": "1.0.0",
+		"description": "Interconnections and event chains between streams in the marketplace simulation",
+		"lastUpdated": "2025-01-15"
+	},
+	"eventChains": [
+		{
+			"id": "student-acquisition-funnel",
+			"name": "Student Acquisition Funnel",
+			"description": "Complete flow from signup to session completion",
+			"chain": [
+				{
+					"stream": "customer.signup.started",
+					"next": [
+						{
+							"stream": "customer.signup.completed",
+							"probability": 0.40,
+							"delay": "2-10 minutes"
+						}
+					]
+				},
+				{
+					"stream": "customer.signup.completed",
+					"next": [
+						{
+							"stream": "customer.login.success",
+							"probability": 0.90,
+							"delay": "0-24 hours"
+						}
+					]
+				},
+				{
+					"stream": "customer.login.success",
+					"next": [
+						{
+							"stream": "customer.tutor.search",
+							"probability": 0.60,
+							"delay": "0-2 hours"
+						}
+					]
+				},
+				{
+					"stream": "customer.tutor.search",
+					"next": [
+						{
+							"stream": "tutor.profile.viewed_by_student",
+							"probability": 0.70,
+							"delay": "0-5 minutes"
+						},
+						{
+							"stream": "session.booking.requested",
+							"probability": 0.30,
+							"delay": "0-30 minutes"
+						}
+					]
+				},
+				{
+					"stream": "session.booking.requested",
+					"next": [
+						{
+							"stream": "session.booking.confirmed",
+							"probability": 0.75,
+							"delay": "0-24 hours"
+						},
+						{
+							"stream": "session.booking.declined_by_tutor",
+							"probability": 0.15,
+							"delay": "0-12 hours"
+						},
+						{
+							"stream": "session.booking.expired",
+							"probability": 0.075,
+							"delay": "24 hours"
+						}
+					]
+				},
+				{
+					"stream": "session.booking.confirmed",
+					"next": [
+						{
+							"stream": "session.started",
+							"probability": 0.95,
+							"delay": "at scheduled time"
+						}
+					]
+				},
+				{
+					"stream": "session.started",
+					"next": [
+						{
+							"stream": "session.completed",
+							"probability": 0.90,
+							"delay": "45-90 minutes"
+						},
+						{
+							"stream": "session.no_show.student",
+							"probability": 0.035,
+							"delay": "15 minutes after scheduled"
+						},
+						{
+							"stream": "session.no_show.tutor",
+							"probability": 0.015,
+							"delay": "15 minutes after scheduled"
+						}
+					]
+				},
+				{
+					"stream": "session.completed",
+					"next": [
+						{
+							"stream": "session.rating.submitted_by_student",
+							"probability": 0.50,
+							"delay": "0-48 hours"
+						},
+						{
+							"stream": "session.feedback.submitted_by_tutor",
+							"probability": 0.60,
+							"delay": "0-24 hours"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "tutor-supply-funnel",
+			"name": "Tutor Supply Funnel",
+			"description": "Complete flow from tutor application to payout",
+			"chain": [
+				{
+					"stream": "marketing.ad.click",
+					"next": [
+						{
+							"stream": "tutor.application.received",
+							"probability": 0.20,
+							"delay": "0-2 hours"
+						}
+					]
+				},
+				{
+					"stream": "tutor.application.received",
+					"next": [
+						{
+							"stream": "tutor.onboarding.step_completed",
+							"probability": 1.0,
+							"delay": "1-7 days",
+							"multiple": true
+						}
+					]
+				},
+				{
+					"stream": "tutor.onboarding.step_completed",
+					"next": [
+						{
+							"stream": "tutor.onboarding.approved",
+							"probability": 0.30,
+							"delay": "7-14 days"
+						},
+						{
+							"stream": "tutor.onboarding.rejected",
+							"probability": 0.40,
+							"delay": "3-10 days"
+						}
+					]
+				},
+				{
+					"stream": "tutor.onboarding.approved",
+					"next": [
+						{
+							"stream": "tutor.availability.set",
+							"probability": 0.80,
+							"delay": "0-3 days"
+						}
+					]
+				},
+				{
+					"stream": "tutor.availability.set",
+					"next": [
+						{
+							"stream": "session.booking.requested",
+							"probability": 0.30,
+							"delay": "0-7 days"
+						}
+					]
+				},
+				{
+					"stream": "session.completed",
+					"next": [
+						{
+							"stream": "tutor.payout.initiated",
+							"probability": 1.0,
+							"delay": "weekly/bi-weekly batches"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "payment-flow",
+			"name": "Payment Flow",
+			"description": "Payment processing and failure handling",
+			"chain": [
+				{
+					"stream": "customer.subscription.payment_success",
+					"next": [],
+					"description": "Expected successful path"
+				},
+				{
+					"stream": "customer.subscription.payment_failure",
+					"next": [
+						{
+							"stream": "support.ticket.created",
+							"probability": 0.30,
+							"delay": "1-6 hours",
+							"category": "billing"
+						},
+						{
+							"stream": "customer.subscription.plan_changed",
+							"probability": 0.15,
+							"delay": "24-72 hours",
+							"eventType": "downgrade"
+						}
+					]
+				},
+				{
+					"stream": "payment_gateway.transaction.status",
+					"next": [
+						{
+							"stream": "customer.subscription.payment_success",
+							"probability": 0.95,
+							"delay": "0-5 minutes",
+							"condition": "status === 'success'"
+						},
+						{
+							"stream": "customer.subscription.payment_failure",
+							"probability": 0.05,
+							"delay": "0-5 minutes",
+							"condition": "status === 'failed'"
+						}
+					]
+				}
+			]
+		}
+	],
+	"cascadingEffects": [
+		{
+			"trigger": "session.booking.expired",
+			"effects": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.3,
+					"delay": "1-6 hours",
+					"description": "Expired bookings lead to frustrated students contacting support"
+				},
+				{
+					"stream": "customer.tutor.search",
+					"multiplier": 1.2,
+					"delay": "0-2 hours",
+					"description": "Students search again after expiration"
+				}
+			]
+		},
+		{
+			"trigger": "session.no_show.tutor",
+			"effects": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.5,
+					"delay": "0-2 hours",
+					"description": "Tutor no-shows trigger immediate support contact"
+				},
+				{
+					"stream": "support.refund.requested",
+					"multiplier": 2.0,
+					"delay": "0-24 hours",
+					"description": "No-shows often lead to refund requests"
+				},
+				{
+					"stream": "customer.subscription.plan_changed",
+					"multiplier": 1.2,
+					"delay": "24-72 hours",
+					"description": "Some students downgrade after poor experience"
+				}
+			]
+		},
+		{
+			"trigger": "customer.subscription.payment_failure",
+			"effects": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.3,
+					"delay": "1-6 hours",
+					"description": "Payment failures trigger billing support tickets"
+				},
+				{
+					"stream": "customer.subscription.plan_changed",
+					"multiplier": 1.2,
+					"delay": "24-72 hours",
+					"description": "Some customers downgrade after payment issues"
+				}
+			]
+		},
+		{
+			"trigger": "session.rating.submitted_by_student",
+			"effects": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.1,
+					"delay": "0-48 hours",
+					"condition": "rating_score < 3",
+					"description": "Low ratings may trigger quality complaints"
+				}
+			]
+		},
+		{
+			"trigger": "tutor.status.changed",
+			"effects": [
+				{
+					"stream": "tutor.availability.set",
+					"multiplier": 0.5,
+					"delay": "immediate",
+					"condition": "new_status === 'paused' || new_status === 'inactive'",
+					"description": "Paused tutors reduce available supply"
+				}
+			]
+		}
+	],
+	"supplyDemandCorrelations": [
+		{
+			"supplyStream": "tutor.availability.set",
+			"demandStream": "customer.tutor.search",
+			"correlation": 0.70,
+			"description": "More availability leads to more searches (visibility)"
+		},
+		{
+			"supplyStream": "tutor.availability.set",
+			"demandStream": "session.booking.confirmed",
+			"correlation": 0.85,
+			"description": "More availability increases booking success rate"
+		},
+		{
+			"supplyStream": "tutor.availability.set",
+			"demandStream": "session.booking.expired",
+			"correlation": -0.80,
+			"description": "Less availability increases expiration rate"
+		},
+		{
+			"supplyStream": "tutor.onboarding.approved",
+			"demandStream": "tutor.availability.set",
+			"correlation": 0.80,
+			"description": "New tutors set availability within days"
+		}
+	],
+	"temporalDependencies": [
+		{
+			"prerequisite": "tutor.onboarding.approved",
+			"dependent": "tutor.availability.set",
+			"minDelay": "0 hours",
+			"maxDelay": "3 days",
+			"description": "Tutor must be approved before setting availability"
+		},
+		{
+			"prerequisite": "session.booking.confirmed",
+			"dependent": "session.started",
+			"minDelay": "0 hours",
+			"maxDelay": "7 days",
+			"description": "Session must be confirmed before it can start"
+		},
+		{
+			"prerequisite": "session.started",
+			"dependent": "session.completed",
+			"minDelay": "30 minutes",
+			"maxDelay": "120 minutes",
+			"description": "Session must start before it can complete"
+		},
+		{
+			"prerequisite": "session.completed",
+			"dependent": "session.rating.submitted_by_student",
+			"minDelay": "0 hours",
+			"maxDelay": "48 hours",
+			"description": "Rating can only be submitted after session completes"
+		},
+		{
+			"prerequisite": "customer.signup.started",
+			"dependent": "customer.signup.completed",
+			"minDelay": "2 minutes",
+			"maxDelay": "10 minutes",
+			"description": "Signup completion must follow signup start"
+		}
+	],
+	"crossDomainRelationships": [
+		{
+			"source": "session.rating.submitted_by_student",
+			"condition": "rating_score < 3",
+			"targets": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.2,
+					"delay": "0-48 hours",
+					"description": "Low ratings increase support contacts"
+				},
+				{
+					"stream": "support.refund.requested",
+					"multiplier": 1.5,
+					"delay": "0-72 hours",
+					"description": "Low ratings may lead to refund requests"
+				}
+			],
+			"churnRisk": 0.30,
+			"description": "Low ratings increase churn risk"
+		},
+		{
+			"source": "support.call.inbound",
+			"condition": "count >= 2 in 14 days",
+			"targets": [
+				{
+					"stream": "customer.subscription.plan_changed",
+					"multiplier": 1.5,
+					"delay": "0-7 days",
+					"description": "Multiple support calls indicate churn risk"
+				}
+			],
+			"churnRisk": 0.50,
+			"description": "IB Alert: 2+ calls in 14 days = high churn risk"
+		},
+		{
+			"source": "session.no_show.tutor",
+			"targets": [
+				{
+					"stream": "support.ticket.created",
+					"multiplier": 1.5,
+					"delay": "0-2 hours"
+				},
+				{
+					"stream": "support.refund.requested",
+					"multiplier": 2.0,
+					"delay": "0-24 hours"
+				},
+				{
+					"stream": "customer.subscription.plan_changed",
+					"multiplier": 1.2,
+					"delay": "24-72 hours"
+				}
+			],
+			"churnRisk": 0.40,
+			"description": "Tutor no-shows significantly increase churn risk"
+		}
+	],
+	"probabilityMatrices": {
+		"bookingOutcomes": {
+			"trigger": "session.booking.requested",
+			"outcomes": [
+				{
+					"stream": "session.booking.confirmed",
+					"probability": 0.75,
+					"weight": 75
+				},
+				{
+					"stream": "session.booking.declined_by_tutor",
+					"probability": 0.15,
+					"weight": 15
+				},
+				{
+					"stream": "session.booking.expired",
+					"probability": 0.075,
+					"weight": 7.5
+				},
+				{
+					"stream": "session.cancellation.by_student",
+					"probability": 0.025,
+					"weight": 2.5
+				}
+			]
+		},
+		"sessionOutcomes": {
+			"trigger": "session.booking.confirmed",
+			"outcomes": [
+				{
+					"stream": "session.completed",
+					"probability": 0.90,
+					"weight": 90
+				},
+				{
+					"stream": "session.no_show.student",
+					"probability": 0.035,
+					"weight": 3.5
+				},
+				{
+					"stream": "session.no_show.tutor",
+					"probability": 0.015,
+					"weight": 1.5
+				},
+				{
+					"stream": "session.cancellation.by_student",
+					"probability": 0.05,
+					"weight": 5
+				}
+			]
+		},
+		"paymentOutcomes": {
+			"trigger": "payment_gateway.transaction.status",
+			"outcomes": [
+				{
+					"stream": "customer.subscription.payment_success",
+					"probability": 0.95,
+					"weight": 95,
+					"condition": "status === 'success'"
+				},
+				{
+					"stream": "customer.subscription.payment_failure",
+					"probability": 0.05,
+					"weight": 5,
+					"condition": "status === 'failed'"
+				}
+			]
+		},
+		"tutorApplicationOutcomes": {
+			"trigger": "tutor.application.received",
+			"outcomes": [
+				{
+					"stream": "tutor.onboarding.approved",
+					"probability": 0.30,
+					"weight": 30,
+					"delay": "7-14 days"
+				},
+				{
+					"stream": "tutor.onboarding.rejected",
+					"probability": 0.40,
+					"weight": 40,
+					"delay": "3-10 days"
+				},
+				{
+					"stream": "tutor.onboarding.step_completed",
+					"probability": 0.30,
+					"weight": 30,
+					"description": "Still in progress"
+				}
+			]
+		}
+	}
+}

@@ -1,0 +1,97 @@
+{
+  "_documentation": {
+    "purpose": "Simulates quality degradation. Tutor no-shows and cancellations spike, leading to refunds and support tickets.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Quality Crisis' scenario.",
+    "example": "When activated, session.no_show.tutor increases 300% (multiplier 4.0), support.refund.requested increases 400% (multiplier 5.0)."
+  },
+  "id": "quality-crisis",
+  "name": "Quality Crisis",
+  "description": "Simulates quality degradation. Tutor no-shows and cancellations spike, leading to refunds and support tickets.",
+  "duration": "1 day",
+  "settlementDuration": "1 week",
+  "settlementType": "exponential",
+  "affectedStreams": {
+    "session.no_show.tutor": {
+      "multiplier": 4.0,
+      "description": "Tutor no-shows increase 300%"
+    },
+    "session.cancellation.by_tutor": {
+      "multiplier": 3.0,
+      "description": "Tutor cancellations increase 200%"
+    },
+    "session.rating.submitted_by_student": {
+      "multiplier": 0.7,
+      "description": "Rating submissions decrease 30% (lower engagement)"
+    },
+    "support.refund.requested": {
+      "multiplier": 5.0,
+      "description": "Refund requests increase 400%"
+    },
+    "support.ticket.created": {
+      "multiplier": 2.5,
+      "description": "Support tickets increase 150%"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "session.no_show.tutor",
+      "effect": {
+        "support.ticket.created": {
+          "multiplier": 1.5,
+          "delay": "0-2 hours",
+          "description": "Tutor no-shows trigger immediate support contact"
+        },
+        "support.refund.requested": {
+          "multiplier": 2.0,
+          "delay": "0-24 hours",
+          "description": "No-shows often lead to refund requests"
+        },
+        "customer.subscription.plan_changed": {
+          "multiplier": 1.2,
+          "delay": "24-72 hours",
+          "description": "Some students downgrade after poor experience"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_training_paused",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Tutor training program paused",
+      "description": "Quality training program temporarily suspended, leading to lower tutor standards",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["session.no_show.tutor", "session.cancellation.by_tutor"],
+        "direction": "increase",
+        "magnitude": "high",
+        "duration": "2 weeks"
+      },
+      "icon": "📚",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_quality_standards_lowered",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Quality standards lowered",
+      "description": "Tutor quality standards reduced to increase supply, affecting service quality",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["session.rating.submitted_by_student", "support.refund.requested"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "1 month"
+      },
+      "icon": "⚠️",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "quality",
+    "tags": ["quality", "tutors", "high-impact"],
+    "typicalTrigger": "Training issues, quality standards changes"
+  }
+}
+

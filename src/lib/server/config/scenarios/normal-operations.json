@@ -1,0 +1,22 @@
+{
+  "_documentation": {
+    "purpose": "Reset to baseline. No modifications, all streams return to normal rates.",
+    "usage": "Loaded by ScenarioEngine when admin clicks 'Reset to Baseline' button. Clears all active scenarios.",
+    "example": "When activated, all stream multipliers return to 1.0 (no modifications), all external events cleared."
+  },
+  "id": "normal-operations",
+  "name": "Normal Operations",
+  "description": "Reset to baseline. No modifications, all streams return to normal rates.",
+  "duration": "0",
+  "settlementDuration": "0",
+  "settlementType": "immediate",
+  "affectedStreams": {},
+  "cascadeEffects": [],
+  "externalEvents": [],
+  "metadata": {
+    "category": "baseline",
+    "tags": ["baseline", "reset"],
+    "typicalTrigger": "Reset button, return to baseline"
+  }
+}
+

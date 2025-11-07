@@ -1,0 +1,83 @@
+{
+  "_documentation": {
+    "purpose": "Simulates support team overwhelmed. Ticket volume spikes while resolution times increase.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Support Overload' scenario.",
+    "example": "When activated, support.ticket.created increases 200% (multiplier 3.0), support.ticket.resolved decreases 30% (multiplier 0.7)."
+  },
+  "id": "support-overload",
+  "name": "Support Overload",
+  "description": "Simulates support team overwhelmed. Ticket volume spikes while resolution times increase.",
+  "duration": "6 hours",
+  "settlementDuration": "12 hours",
+  "settlementType": "linear",
+  "affectedStreams": {
+    "support.ticket.created": {
+      "multiplier": 3.0,
+      "description": "Support tickets increase 200%"
+    },
+    "support.ticket.resolved": {
+      "multiplier": 0.7,
+      "description": "Resolution rate decreases 30% (slower resolution)"
+    },
+    "support.call.inbound": {
+      "multiplier": 2.5,
+      "description": "Inbound calls increase 150%"
+    },
+    "support.live_chat.started": {
+      "multiplier": 2.8,
+      "description": "Live chat sessions increase 180%"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "support.ticket.created",
+      "effect": {
+        "support.ticket.updated": {
+          "multiplier": 1.2,
+          "delay": "0-2 hours",
+          "description": "More tickets lead to more updates"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_support_team_reduced",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Support team reduced",
+      "description": "Support team headcount reduced, affecting response times",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["support.ticket.resolved", "support.call.inbound"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "2 weeks"
+      },
+      "icon": "👥",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_product_launch_issues",
+      "timestamp": "now",
+      "type": "product",
+      "title": "New product launch (more issues)",
+      "description": "Recent product launch introduced bugs, increasing support volume",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["support.ticket.created", "support.live_chat.started"],
+        "direction": "increase",
+        "magnitude": "high",
+        "duration": "1 week"
+      },
+      "icon": "🚀",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "support",
+    "tags": ["support", "operational", "medium-impact"],
+    "typicalTrigger": "Team changes, product issues"
+  }
+}
+

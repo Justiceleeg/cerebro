@@ -1,0 +1,94 @@
+{
+  "_documentation": {
+    "purpose": "Simulates customer churn. Downgrades, payment failures, and reduced engagement indicate churn risk.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Churn Pattern' scenario.",
+    "example": "When activated, customer.subscription.plan_changed increases 200% (multiplier 3.0, mostly downgrades), session.booking.requested decreases 30% (multiplier 0.7)."
+  },
+  "id": "churn-pattern",
+  "name": "Churn Pattern",
+  "description": "Simulates customer churn. Downgrades, payment failures, and reduced engagement indicate churn risk.",
+  "duration": "1 week",
+  "settlementDuration": "2 weeks",
+  "settlementType": "exponential",
+  "affectedStreams": {
+    "customer.subscription.plan_changed": {
+      "multiplier": 3.0,
+      "description": "Plan changes increase 200% (mostly downgrades)"
+    },
+    "customer.subscription.payment_failure": {
+      "multiplier": 2.5,
+      "description": "Payment failures increase 150%"
+    },
+    "support.call.inbound": {
+      "multiplier": 2.0,
+      "description": "Inbound calls increase 100% (≥2 calls = churn risk)"
+    },
+    "session.booking.requested": {
+      "multiplier": 0.7,
+      "description": "Booking requests decrease 30% (less engagement)"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "customer.subscription.payment_failure",
+      "effect": {
+        "customer.subscription.plan_changed": {
+          "multiplier": 1.3,
+          "delay": "24-72 hours",
+          "description": "Payment failures lead to downgrades"
+        }
+      }
+    },
+    {
+      "trigger": "support.call.inbound",
+      "effect": {
+        "customer.subscription.plan_changed": {
+          "multiplier": 1.2,
+          "delay": "0-7 days",
+          "condition": "count >= 2 in 14 days",
+          "description": "Multiple support calls indicate churn risk"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_competitor_launched",
+      "timestamp": "now",
+      "type": "competitive",
+      "title": "Competitor launched",
+      "description": "Major competitor launched similar service, attracting customers",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["customer.subscription.plan_changed", "session.booking.requested"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "1 month"
+      },
+      "icon": "🏢",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_pricing_increased",
+      "timestamp": "now",
+      "type": "product",
+      "title": "Pricing increased",
+      "description": "Subscription pricing increased, causing some customers to downgrade or cancel",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["customer.subscription.plan_changed", "customer.subscription.payment_failure"],
+        "direction": "increase",
+        "magnitude": "medium",
+        "duration": "2 weeks"
+      },
+      "icon": "💰",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "churn",
+    "tags": ["churn", "competitive", "high-impact"],
+    "typicalTrigger": "Competitor actions, pricing changes"
+  }
+}
+

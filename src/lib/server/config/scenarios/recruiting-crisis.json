@@ -1,0 +1,93 @@
+{
+  "_documentation": {
+    "purpose": "Simulates tutor recruiting problems. Application volume drops, reducing new tutor supply.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Recruiting Crisis' scenario.",
+    "example": "When activated, tutor.application.received decreases 50% (multiplier 0.5), tutor.availability.set decreases 20% (multiplier 0.8)."
+  },
+  "id": "recruiting-crisis",
+  "name": "Recruiting Crisis",
+  "description": "Simulates tutor recruiting problems. Application volume drops, reducing new tutor supply.",
+  "duration": "2 weeks",
+  "settlementDuration": "1 month",
+  "settlementType": "exponential",
+  "affectedStreams": {
+    "tutor.application.received": {
+      "multiplier": 0.5,
+      "description": "Tutor applications decrease 50%"
+    },
+    "tutor.onboarding.approved": {
+      "multiplier": 0.6,
+      "description": "Tutor approvals decrease 40%"
+    },
+    "marketing.ad.conversion": {
+      "multiplier": 0.7,
+      "description": "Ad conversions decrease 30%"
+    },
+    "tutor.availability.set": {
+      "multiplier": 0.8,
+      "description": "Available tutors decrease 20% (fewer new tutors)"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "tutor.application.received",
+      "effect": {
+        "tutor.onboarding.approved": {
+          "multiplier": 0.9,
+          "delay": "7-14 days",
+          "description": "Fewer applications lead to fewer approvals"
+        }
+      }
+    },
+    {
+      "trigger": "tutor.onboarding.approved",
+      "effect": {
+        "tutor.availability.set": {
+          "multiplier": 0.9,
+          "delay": "0-3 days",
+          "description": "Fewer new tutors means less availability"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_recruiting_budget_cut",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Recruiting budget cut",
+      "description": "Marketing budget for tutor recruitment significantly reduced",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["tutor.application.received", "marketing.ad.conversion"],
+        "direction": "decrease",
+        "magnitude": "high",
+        "duration": "1 month"
+      },
+      "icon": "📉",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_job_market_improved",
+      "timestamp": "now",
+      "type": "competitive",
+      "title": "Job market improved",
+      "description": "General job market improved, tutors finding other opportunities",
+      "severity": "info",
+      "expectedImpact": {
+        "streams": ["tutor.application.received", "tutor.onboarding.approved"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "2 months"
+      },
+      "icon": "💼",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "recruiting",
+    "tags": ["recruiting", "supply", "medium-impact"],
+    "typicalTrigger": "Budget cuts, market conditions"
+  }
+}
+

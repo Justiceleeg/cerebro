@@ -1,0 +1,497 @@
+{
+  "_documentation": {
+    "purpose": "Defines how often each stream generates events (high/medium/low frequency) with jitter to avoid synchronization. Used by StreamGenerator to schedule event checks.",
+    "usage": "Loaded at startup. StreamGenerator uses cadences to schedule event checks: high frequency (1-10 seconds), medium (1-5 minutes), low (30-60 minutes).",
+    "example": "customer.tutor.search has medium frequency, so StreamGenerator checks every 1-5 minutes with jitter to determine if a search event should be generated."
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Update frequencies and cadences for all 50 streams in the marketplace simulation",
+    "lastUpdated": "2025-01-15"
+  },
+  "cadenceCategories": {
+    "high": {
+      "description": "Seconds to minutes - continuous or near-continuous events",
+      "checkInterval": {
+        "min": 1,
+        "max": 10,
+        "unit": "seconds"
+      },
+      "jitter": {
+        "min": 0.5,
+        "max": 2.0,
+        "unit": "seconds"
+      }
+    },
+    "medium": {
+      "description": "Minutes to hours - regular but not continuous events",
+      "checkInterval": {
+        "min": 1,
+        "max": 5,
+        "unit": "minutes"
+      },
+      "jitter": {
+        "min": 0.5,
+        "max": 2.0,
+        "unit": "minutes"
+      }
+    },
+    "low": {
+      "description": "Hours to daily - periodic or batched events",
+      "checkInterval": {
+        "min": 30,
+        "max": 60,
+        "unit": "minutes"
+      },
+      "jitter": {
+        "min": 5,
+        "max": 15,
+        "unit": "minutes"
+      }
+    },
+    "veryLow": {
+      "description": "Occasional or sporadic events",
+      "checkInterval": {
+        "min": 2,
+        "max": 6,
+        "unit": "hours"
+      },
+      "jitter": {
+        "min": 30,
+        "max": 60,
+        "unit": "minutes"
+      }
+    }
+  },
+  "streamCadences": {
+    "customer.signup.started": {
+      "category": "medium",
+      "eventsPerHour": 20.8,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "customer.signup.completed": {
+      "category": "medium",
+      "eventsPerHour": 8.3,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "customer.login.success": {
+      "category": "high",
+      "eventsPerHour": 625,
+      "variance": 0.30,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "peakHours": {
+        "start": 8,
+        "end": 22,
+        "multiplier": 1.5
+      }
+    },
+    "customer.login.failure": {
+      "category": "medium",
+      "eventsPerHour": 12.5,
+      "variance": 0.25,
+      "timeOfDayModulation": true
+    },
+    "customer.profile.update": {
+      "category": "veryLow",
+      "eventsPerHour": 8.3,
+      "variance": 0.50,
+      "timeOfDayModulation": false
+    },
+    "customer.subscription.plan_changed": {
+      "category": "veryLow",
+      "eventsPerHour": 2.1,
+      "variance": 0.40,
+      "timeOfDayModulation": false
+    },
+    "customer.subscription.payment_success": {
+      "category": "low",
+      "eventsPerHour": 50,
+      "variance": 0.15,
+      "timeOfDayModulation": false,
+      "description": "Distributed throughout month based on billing cycles"
+    },
+    "customer.subscription.payment_failure": {
+      "category": "veryLow",
+      "eventsPerHour": 2.5,
+      "variance": 0.30,
+      "timeOfDayModulation": false
+    },
+    "customer.page.view": {
+      "category": "high",
+      "eventsPerHour": 8333,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "customer.tutor.search": {
+      "category": "medium",
+      "eventsPerHour": 333,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "peakHours": {
+        "start": 8,
+        "end": 22,
+        "multiplier": 1.4
+      }
+    },
+    "tutor.application.received": {
+      "category": "medium",
+      "eventsPerHour": 2.1,
+      "variance": 0.30,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "tutor.onboarding.step_completed": {
+      "category": "veryLow",
+      "eventsPerHour": 1.25,
+      "variance": 0.40,
+      "timeOfDayModulation": false,
+      "description": "Depends on applicant volume and processing speed"
+    },
+    "tutor.onboarding.approved": {
+      "category": "veryLow",
+      "eventsPerHour": 0.625,
+      "variance": 0.35,
+      "timeOfDayModulation": false,
+      "description": "Batched weekly or as approvals complete"
+    },
+    "tutor.onboarding.rejected": {
+      "category": "veryLow",
+      "eventsPerHour": 0.83,
+      "variance": 0.35,
+      "timeOfDayModulation": false
+    },
+    "tutor.availability.set": {
+      "category": "medium",
+      "eventsPerHour": 83.3,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "peakHours": {
+        "start": 7,
+        "end": 9,
+        "multiplier": 1.3,
+        "description": "Morning and evening peaks when tutors update schedules"
+      }
+    },
+    "tutor.availability.batch_updated": {
+      "category": "veryLow",
+      "eventsPerHour": 4.2,
+      "variance": 0.30,
+      "timeOfDayModulation": true,
+      "description": "Tutors update weekly templates"
+    },
+    "tutor.login.event": {
+      "category": "medium",
+      "eventsPerHour": 125,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "tutor.profile.viewed_by_student": {
+      "category": "high",
+      "eventsPerHour": 500,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "description": "High during peak search times"
+    },
+    "tutor.payout.initiated": {
+      "category": "low",
+      "eventsPerHour": 8.3,
+      "variance": 0.20,
+      "timeOfDayModulation": false,
+      "description": "Weekly or bi-weekly batches, typically on Fridays"
+    },
+    "tutor.status.changed": {
+      "category": "veryLow",
+      "eventsPerHour": 2.1,
+      "variance": 0.50,
+      "timeOfDayModulation": false
+    },
+    "session.booking.requested": {
+      "category": "medium",
+      "eventsPerHour": 100,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "peakHours": {
+        "start": 8,
+        "end": 22,
+        "multiplier": 1.3
+      }
+    },
+    "session.booking.confirmed": {
+      "category": "medium",
+      "eventsPerHour": 75,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "delay": {
+        "min": 0,
+        "max": 24,
+        "unit": "hours",
+        "description": "Confirmation follows request within 0-24 hours"
+      }
+    },
+    "session.booking.declined_by_tutor": {
+      "category": "medium",
+      "eventsPerHour": 15,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "delay": {
+        "min": 0,
+        "max": 12,
+        "unit": "hours"
+      }
+    },
+    "session.booking.expired": {
+      "category": "medium",
+      "eventsPerHour": 7.5,
+      "variance": 0.30,
+      "timeOfDayModulation": false,
+      "delay": {
+        "min": 24,
+        "max": 24,
+        "unit": "hours",
+        "description": "Expires exactly 24 hours after request"
+      }
+    },
+    "session.cancellation.by_student": {
+      "category": "veryLow",
+      "eventsPerHour": 3.75,
+      "variance": 0.40,
+      "timeOfDayModulation": false
+    },
+    "session.cancellation.by_tutor": {
+      "category": "veryLow",
+      "eventsPerHour": 0.75,
+      "variance": 0.50,
+      "timeOfDayModulation": false
+    },
+    "session.started": {
+      "category": "high",
+      "eventsPerHour": 70.8,
+      "variance": 0.15,
+      "timeOfDayModulation": true,
+      "description": "Clustered around scheduled session times",
+      "clustering": {
+        "window": 15,
+        "unit": "minutes",
+        "description": "Sessions start within 15 minutes of scheduled time"
+      }
+    },
+    "session.completed": {
+      "category": "high",
+      "eventsPerHour": 68.75,
+      "variance": 0.15,
+      "timeOfDayModulation": true,
+      "description": "Clustered around scheduled end times",
+      "clustering": {
+        "window": 15,
+        "unit": "minutes"
+      }
+    },
+    "session.no_show.student": {
+      "category": "veryLow",
+      "eventsPerHour": 2.5,
+      "variance": 0.40,
+      "timeOfDayModulation": false,
+      "delay": {
+        "min": 15,
+        "max": 15,
+        "unit": "minutes",
+        "description": "Determined 15 minutes after scheduled start"
+      }
+    },
+    "session.no_show.tutor": {
+      "category": "veryLow",
+      "eventsPerHour": 1.04,
+      "variance": 0.50,
+      "timeOfDayModulation": false,
+      "delay": {
+        "min": 15,
+        "max": 15,
+        "unit": "minutes"
+      }
+    },
+    "session.rating.submitted_by_student": {
+      "category": "medium",
+      "eventsPerHour": 34.4,
+      "variance": 0.30,
+      "timeOfDayModulation": false,
+      "delay": {
+        "min": 0,
+        "max": 48,
+        "unit": "hours",
+        "description": "Submitted within 0-48 hours after session completion"
+      }
+    },
+    "session.feedback.submitted_by_tutor": {
+      "category": "medium",
+      "eventsPerHour": 41.25,
+      "variance": 0.25,
+      "timeOfDayModulation": false,
+      "delay": {
+        "min": 0,
+        "max": 24,
+        "unit": "hours"
+      }
+    },
+    "support.call.inbound": {
+      "category": "medium",
+      "eventsPerHour": 8.3,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "peakHours": {
+        "start": 9,
+        "end": 17,
+        "multiplier": 1.5,
+        "description": "Business hours"
+      }
+    },
+    "support.call.outbound": {
+      "category": "veryLow",
+      "eventsPerHour": 1.25,
+      "variance": 0.40,
+      "timeOfDayModulation": true,
+      "peakHours": {
+        "start": 9,
+        "end": 17,
+        "multiplier": 1.3
+      }
+    },
+    "support.ticket.created": {
+      "category": "medium",
+      "eventsPerHour": 12.5,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "support.ticket.updated": {
+      "category": "medium",
+      "eventsPerHour": 37.5,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "description": "Multiple updates per ticket"
+    },
+    "support.ticket.resolved": {
+      "category": "medium",
+      "eventsPerHour": 12.5,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "delay": {
+        "min": 1,
+        "max": 24,
+        "unit": "hours",
+        "description": "Resolution time from creation"
+      }
+    },
+    "support.live_chat.started": {
+      "category": "medium",
+      "eventsPerHour": 20.8,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "support.live_chat.message": {
+      "category": "high",
+      "eventsPerHour": 208.3,
+      "variance": 0.30,
+      "timeOfDayModulation": true,
+      "description": "Continuous during active chats"
+    },
+    "support.refund.requested": {
+      "category": "veryLow",
+      "eventsPerHour": 0.42,
+      "variance": 0.50,
+      "timeOfDayModulation": false
+    },
+    "marketing.ad.spend": {
+      "category": "low",
+      "eventsPerHour": 2.1,
+      "variance": 0.20,
+      "timeOfDayModulation": false,
+      "description": "Daily or hourly batches from ad platforms"
+    },
+    "marketing.ad.impression": {
+      "category": "high",
+      "eventsPerHour": 2083,
+      "variance": 0.20,
+      "timeOfDayModulation": true,
+      "description": "Very high volume during active campaigns"
+    },
+    "marketing.ad.click": {
+      "category": "high",
+      "eventsPerHour": 104.2,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "marketing.ad.conversion": {
+      "category": "medium",
+      "eventsPerHour": 20.8,
+      "variance": 0.30,
+      "timeOfDayModulation": true,
+      "delay": {
+        "min": 0,
+        "max": 2,
+        "unit": "hours"
+      }
+    },
+    "seo.organic.traffic": {
+      "category": "medium",
+      "eventsPerHour": 8.3,
+      "variance": 0.25,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true
+    },
+    "api.request.log": {
+      "category": "high",
+      "eventsPerHour": 41667,
+      "variance": 0.15,
+      "timeOfDayModulation": true,
+      "dayOfWeekModulation": true,
+      "description": "Continuous API traffic"
+    },
+    "system.error.log": {
+      "category": "veryLow",
+      "eventsPerHour": 4.2,
+      "variance": 0.50,
+      "timeOfDayModulation": false,
+      "description": "Should be rare in healthy system"
+    },
+    "database.query.performance": {
+      "category": "veryLow",
+      "eventsPerHour": 8.3,
+      "variance": 0.40,
+      "timeOfDayModulation": false,
+      "description": "Only slow queries logged"
+    },
+    "platform.concurrent.users": {
+      "category": "low",
+      "eventsPerHour": 12,
+      "variance": 0.10,
+      "timeOfDayModulation": true,
+      "snapshotInterval": {
+        "value": 5,
+        "unit": "minutes",
+        "description": "Periodic snapshots every 5 minutes"
+      }
+    },
+    "payment_gateway.transaction.status": {
+      "category": "medium",
+      "eventsPerHour": 54.2,
+      "variance": 0.15,
+      "timeOfDayModulation": false,
+      "description": "All payment attempts"
+    }
+  }
+}
+

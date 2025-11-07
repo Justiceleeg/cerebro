@@ -1,0 +1,88 @@
+{
+  "_documentation": {
+    "purpose": "Simulates tutor supply shortage. Many tutors become unavailable, leading to booking failures and increased search activity.",
+    "usage": "Loaded by ScenarioEngine when admin activates 'Supply Crisis' scenario.",
+    "example": "When activated, tutor.availability.set decreases 40% (multiplier 0.6), session.booking.expired increases 150% (multiplier 2.5)."
+  },
+  "id": "supply-crisis",
+  "name": "Supply Crisis",
+  "description": "Simulates tutor supply shortage. Many tutors become unavailable, leading to booking failures and increased search activity.",
+  "duration": "4 hours",
+  "settlementDuration": "8 hours",
+  "settlementType": "linear",
+  "affectedStreams": {
+    "tutor.availability.set": {
+      "multiplier": 0.6,
+      "description": "Tutor availability decreases 40%"
+    },
+    "tutor.status.changed": {
+      "multiplier": 3.0,
+      "description": "Tutors going inactive increases 200%"
+    },
+    "session.booking.expired": {
+      "multiplier": 2.5,
+      "description": "Booking expirations increase 150% due to supply shortage"
+    },
+    "customer.tutor.search": {
+      "multiplier": 1.2,
+      "description": "Students search more when supply is constrained"
+    }
+  },
+  "cascadeEffects": [
+    {
+      "trigger": "session.booking.expired",
+      "effect": {
+        "support.ticket.created": {
+          "multiplier": 1.4,
+          "delay": "1-6 hours",
+          "description": "Expired bookings lead to frustrated students"
+        },
+        "customer.tutor.search": {
+          "multiplier": 1.1,
+          "delay": "0-2 hours",
+          "description": "Students search again after expiration"
+        }
+      }
+    }
+  ],
+  "externalEvents": [
+    {
+      "id": "evt_tutors_vacation",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Top tutors on vacation",
+      "description": "Many high-performing tutors are on vacation simultaneously, reducing available supply",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["tutor.availability.set", "session.booking.expired"],
+        "direction": "decrease",
+        "magnitude": "high",
+        "duration": "1 week"
+      },
+      "icon": "🏖️",
+      "injectedByAI": false
+    },
+    {
+      "id": "evt_recruiting_dry",
+      "timestamp": "now",
+      "type": "operational",
+      "title": "Recruiting pipeline dry",
+      "description": "New tutor applications have slowed significantly, reducing new supply",
+      "severity": "warning",
+      "expectedImpact": {
+        "streams": ["tutor.application.received", "tutor.onboarding.approved"],
+        "direction": "decrease",
+        "magnitude": "medium",
+        "duration": "2 weeks"
+      },
+      "icon": "📉",
+      "injectedByAI": false
+    }
+  ],
+  "metadata": {
+    "category": "supply-shortage",
+    "tags": ["operational", "supply", "high-impact"],
+    "typicalTrigger": "Holiday periods, recruiting issues"
+  }
+}
+
