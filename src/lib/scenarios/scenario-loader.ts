@@ -48,6 +48,14 @@ export class ScenarioLoader {
 			return null;
 		}
 
+		// Validate scenario definition
+		const validation = this.validateScenario(scenarioId);
+		if (!validation.valid) {
+			throw new Error(
+				`Invalid scenario definition for "${scenarioId}": ${validation.errors.join(', ')}`
+			);
+		}
+
 		// Convert to ScenarioModifier format
 		const now = new Date().toISOString();
 		const scenario: ScenarioModifier = {
@@ -91,6 +99,97 @@ export class ScenarioLoader {
 			category: s.category,
 			tags: s.tags
 		}));
+	}
+
+	/**
+	 * Validate a scenario definition
+	 * Returns validation errors if any, or null if valid
+	 */
+	validateScenario(scenarioId: string): { valid: boolean; errors: string[] } {
+		const errors: string[] = [];
+
+		// Check if scenario exists in index
+		const scenarioInfo = scenarioIndex.scenarios.find((s) => s.id === scenarioId);
+		if (!scenarioInfo) {
+			errors.push(`Scenario "${scenarioId}" not found in index`);
+			return { valid: false, errors };
+		}
+
+		// Check if scenario file exists
+		const scenarioData = scenarioFiles[scenarioId];
+		if (!scenarioData) {
+			errors.push(`Scenario file not found for "${scenarioId}"`);
+			return { valid: false, errors };
+		}
+
+		// Validate required fields
+		if (!scenarioData.id) {
+			errors.push(`Scenario "${scenarioId}" missing required field: id`);
+		}
+		if (!scenarioData.description) {
+			errors.push(`Scenario "${scenarioId}" missing required field: description`);
+		}
+		// Allow empty affectedStreams for baseline scenarios (e.g., normal-operations)
+		if (scenarioData.affectedStreams === undefined || scenarioData.affectedStreams === null) {
+			errors.push(`Scenario "${scenarioId}" missing required field: affectedStreams`);
+		}
+
+		// Validate affectedStreams structure
+		if (scenarioData.affectedStreams) {
+			for (const [stream, config] of Object.entries(scenarioData.affectedStreams)) {
+				if (!config || typeof config !== 'object') {
+					errors.push(`Scenario "${scenarioId}" has invalid affectedStreams entry for "${stream}"`);
+				} else {
+					// Stream modification must have at least one of: multiplier, override, additive, or probabilityShift
+					const hasModifier =
+						config.multiplier !== undefined ||
+						config.override !== undefined ||
+						config.additive !== undefined ||
+						config.probabilityShift !== undefined;
+					if (!hasModifier) {
+						errors.push(
+							`Scenario "${scenarioId}" affectedStreams["${stream}"] missing modifier (multiplier, override, additive, or probabilityShift)`
+						);
+					}
+				}
+			}
+		}
+
+		// Validate external events if present
+		if (scenarioData.externalEvents && Array.isArray(scenarioData.externalEvents)) {
+			for (const event of scenarioData.externalEvents) {
+				if (!event.id) {
+					errors.push(`Scenario "${scenarioId}" has external event missing id`);
+				}
+				if (!event.type) {
+					errors.push(`Scenario "${scenarioId}" external event "${event.id || 'unknown'}" missing type`);
+				}
+				if (!event.title) {
+					errors.push(`Scenario "${scenarioId}" external event "${event.id || 'unknown'}" missing title`);
+				}
+				if (!event.description) {
+					errors.push(
+						`Scenario "${scenarioId}" external event "${event.id || 'unknown'}" missing description`
+					);
+				}
+			}
+		}
+
+		return { valid: errors.length === 0, errors };
+	}
+
+	/**
+	 * Validate all scenarios
+	 * Returns a map of scenario IDs to validation results
+	 */
+	validateAllScenarios(): Record<string, { valid: boolean; errors: string[] }> {
+		const results: Record<string, { valid: boolean; errors: string[] }> = {};
+
+		for (const scenarioInfo of scenarioIndex.scenarios) {
+			results[scenarioInfo.id] = this.validateScenario(scenarioInfo.id);
+		}
+
+		return results;
 	}
 
 	private convertAffectedStreams(affectedStreams: Record<string, any>): Record<string, any> {

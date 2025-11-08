@@ -191,10 +191,44 @@ export class ScenarioEngine {
 	}
 
 	/**
+	 * Check if a scenario is currently active
+	 * Returns true if any scenario is in 'active' or 'settling' state
+	 */
+	hasActiveScenario(): boolean {
+		this.updateScenarioLifecycle();
+		return this.state.activeModifiers.some(
+			(m) => m.status === 'active' || m.status === 'settling'
+		);
+	}
+
+	/**
+	 * Get the currently active scenario (if any)
+	 * Returns the active scenario modifier or null
+	 */
+	getActiveScenario(): ScenarioModifier | null {
+		this.updateScenarioLifecycle();
+		const active = this.state.activeModifiers.find(
+			(m) => m.status === 'active' || m.status === 'settling'
+		);
+		return active || null;
+	}
+
+	/**
 	 * Activate a scenario
 	 * Stores scenario modifiers and external events in state
+	 * Throws an error if a scenario is already active
 	 */
 	activateScenario(scenario: ScenarioModifier, events: ExternalEvent[]): void {
+		this.updateScenarioLifecycle();
+
+		// Check for active scenario conflict
+		if (this.hasActiveScenario()) {
+			const activeScenario = this.getActiveScenario();
+			throw new Error(
+				`Cannot activate scenario "${scenario.id}": scenario "${activeScenario?.id}" is already active`
+			);
+		}
+
 		this.state.activeModifiers = [scenario];
 		this.state.activeEvents = events;
 		this.state.historicalMode = 'modified';

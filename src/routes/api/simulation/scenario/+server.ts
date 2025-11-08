@@ -18,7 +18,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const loader = new ScenarioLoader();
-		const result = await loader.loadScenario(scenarioId);
+		let result;
+		try {
+			result = await loader.loadScenario(scenarioId);
+		} catch (error) {
+			// Handle validation errors
+			if (error instanceof Error && error.message.includes('Invalid scenario definition')) {
+				return json({ error: error.message }, { status: 400 });
+			}
+			throw error;
+		}
 
 		if (!result) {
 			return json({ error: `Scenario not found: ${scenarioId}` }, { status: 404 });
@@ -26,7 +35,25 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const { scenario, events } = result;
 		const engine = getScenarioEngine();
-		engine.activateScenario(scenario, events);
+
+		try {
+			engine.activateScenario(scenario, events);
+		} catch (error) {
+			// Handle scenario conflict
+			if (error instanceof Error && error.message.includes('already active')) {
+				const activeScenario = engine.getActiveScenario();
+				return json(
+					{
+						error: 'Scenario conflict',
+						message: error.message,
+						activeScenario: activeScenario?.id
+					},
+					{ status: 409 }
+				);
+			}
+			// Re-throw other errors
+			throw error;
+		}
 
 		return json({
 			success: true,
@@ -35,6 +62,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 	} catch (error) {
 		console.error('Error activating scenario:', error);
+		// Return conflict error if already handled
+		if (error instanceof Error && error.message.includes('already active')) {
+			return json(
+				{
+					error: 'Scenario conflict',
+					message: error.message
+				},
+				{ status: 409 }
+			);
+		}
 		return json({ error: 'Failed to activate scenario' }, { status: 500 });
 	}
 };
