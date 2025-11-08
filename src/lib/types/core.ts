@@ -69,6 +69,8 @@ export interface ScenarioModifier {
 	relatedEvents: string[];
 	status: 'active' | 'settling' | 'settled';
 	settlementDuration?: string;
+	settlementType?: 'linear' | 'exponential';
+	settlementStartTime?: string; // ISO 8601 - when settling phase started
 }
 
 /**

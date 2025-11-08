@@ -60,7 +60,8 @@ export class ScenarioLoader {
 			cascadeEffects: this.convertCascadeEffects(scenarioData.cascadeEffects || []),
 			relatedEvents: scenarioData.externalEvents?.map((e: any) => e.id) || [],
 			status: 'active',
-			settlementDuration: scenarioData.settlementDuration
+			settlementDuration: scenarioData.settlementDuration,
+			settlementType: scenarioData.settlementType || 'linear'
 		};
 
 		// Convert external events
