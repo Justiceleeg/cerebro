@@ -1,5 +1,6 @@
 import type { StreamEvent, ExternalEvent } from '$lib/types';
 import { StreamGenerator } from './stream-generator.js';
+import { getRelationshipEngine } from './relationship-engine.js';
 import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 import externalEventsLibrary from '$lib/server/config/external-events-library.json';
 
@@ -29,10 +30,31 @@ export function generateBaselineHistory(
 	const intervalMs = intervalHours * 60 * 60 * 1000;
 	let currentTime = new Date(startDate);
 
+	const relationshipEngine = getRelationshipEngine();
+
 	// Generate events for each interval
 	while (currentTime < endDate) {
+		// Check for pending events that should be resolved at this time
+		const pendingEvents = relationshipEngine.getPendingEventsToResolve(currentTime);
+		for (const pending of pendingEvents) {
+			const resolvedStream = relationshipEngine.resolvePendingEvent(pending);
+			if (resolvedStream) {
+				// Generate the resolved event
+				const resolvedEvent = generator.generateEvent(resolvedStream, currentTime.toISOString());
+				events.push(resolvedEvent);
+			}
+		}
+
+		// Check for scheduled cascades
+		const cascades = relationshipEngine.getScheduledCascades(currentTime);
+		for (const cascade of cascades) {
+			// Apply cascade multiplier to the target stream
+			// The cascade multiplier is already applied in generateEvent
+			relationshipEngine.removeCascade(cascade);
+		}
+
 		// Generate an event for this interval
-		// The generator applies time-of-day, day-of-week, and other patterns
+		// The generator applies time-of-day, day-of-week, relationship enforcement, and other patterns
 		const event = generator.generateEvent(stream, currentTime.toISOString());
 
 		// Add occasional anomalies (spikes/dips) - ~5% chance
@@ -53,6 +75,9 @@ export function generateBaselineHistory(
 		}
 
 		events.push(event);
+
+		// Clean up resolved events
+		relationshipEngine.cleanupResolvedEvents();
 
 		// Move to next interval
 		currentTime = new Date(currentTime.getTime() + intervalMs);

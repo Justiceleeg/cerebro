@@ -3,6 +3,7 @@ import type * as StreamEventTypes from '$lib/types/stream-events';
 import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 import { normalizeStreamValue, getBaselineStatsForStream } from './normalize.js';
 import { getScenarioEngine } from '$lib/scenarios/scenario-engine.js';
+import { getRelationshipEngine } from './relationship-engine.js';
 
 /**
  * StreamGenerator class
@@ -18,6 +19,26 @@ export class StreamGenerator {
 	 */
 	generateEvent(stream: string, timestamp?: string): StreamEvent {
 		const eventTimestamp = timestamp || new Date().toISOString();
+		const eventTime = new Date(eventTimestamp);
+		
+		// Check relationship engine for pending events and cascades
+		const relationshipEngine = getRelationshipEngine();
+		
+		// Check if we should resolve pending events first
+		const pendingEvents = relationshipEngine.getPendingEventsToResolve(eventTime);
+		for (const pending of pendingEvents) {
+			const resolvedStream = relationshipEngine.resolvePendingEvent(pending);
+			if (resolvedStream && resolvedStream === stream) {
+				// This stream is being generated as a resolution of a pending event
+				// Continue with generation
+			}
+		}
+		
+		// Check temporal dependencies
+		if (!relationshipEngine.canGenerateStream(stream, eventTime)) {
+			// Cannot generate yet - return a placeholder or skip
+			// For now, we'll still generate but this could be enhanced
+		}
 		
 		// Route to specific generator based on stream name
 		const data = this.generateStreamData(stream);
@@ -68,17 +89,26 @@ export class StreamGenerator {
 			}
 		}
 
+		// Apply cascade multipliers from relationship engine
+		const cascadeMultiplier = relationshipEngine.getCascadeMultiplier(stream, eventTime);
+		rawValue = rawValue * cascadeMultiplier;
+
 		// Normalize the value
 		const baselineStats = getBaselineStatsForStream(stream);
 		const { normalizedValue, anomalyFlag } = normalizeStreamValue(rawValue, baselineStats);
 
-		return {
+		const event: StreamEvent = {
 			stream,
 			timestamp: eventTimestamp,
 			data,
 			normalizedValue,
 			anomalyFlag
 		};
+
+		// Process event through relationship engine to trigger chains and cascades
+		relationshipEngine.processEvent(event);
+
+		return event;
 	}
 
 	/**
