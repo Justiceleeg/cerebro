@@ -1,6 +1,7 @@
-import type { StreamEvent, ExternalEvent } from '$lib/types';
+import type { StreamEvent, ExternalEvent, ScenarioModifier } from '$lib/types';
 import { StreamGenerator } from './stream-generator.js';
 import { getRelationshipEngine } from './relationship-engine.js';
+import { normalizeStreamValue, getBaselineStatsForStream } from './normalize.js';
 import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 import externalEventsLibrary from '$lib/server/config/external-events-library.json';
 
@@ -198,5 +199,175 @@ export function generateBaselineExternalEvents(
 	events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 	
 	return events;
+}
+
+/**
+ * Regenerate historical data for a time window with scenario modifications applied
+ * This function regenerates historical data with scenario modifiers and external events applied,
+ * maintaining temporal coherence and stream relationships.
+ * 
+ * Note: This function generates baseline events first, then applies modifiers.
+ * The baseline generation uses StreamGenerator which may apply modifiers if active,
+ * so we ensure baseline generation happens without modifiers by using the baseline data directly.
+ * 
+ * @param stream - Stream name to regenerate
+ * @param startDate - Start date for historical data
+ * @param endDate - End date for historical data
+ * @param modifiers - Active scenario modifiers to apply
+ * @param externalEvents - Active external events to apply
+ * @param baselineEvents - Optional baseline events to use (if not provided, will generate)
+ * @returns Regenerated stream events with modifications applied
+ */
+export function regenerateHistoricalWindow(
+	stream: string,
+	startDate: Date,
+	endDate: Date,
+	modifiers: ScenarioModifier[],
+	externalEvents: ExternalEvent[],
+	baselineEvents?: StreamEvent[]
+): StreamEvent[] {
+	// Use provided baseline events or generate new ones
+	// Note: When generating, we need to ensure no modifiers are applied
+	// Since StreamGenerator.generateEvent() applies modifiers if active,
+	// we'll use the baseline data from memory if available
+	let eventsToModify: StreamEvent[];
+	
+	if (baselineEvents) {
+		// Use provided baseline events
+		eventsToModify = baselineEvents;
+	} else {
+		// Generate baseline events (may have modifiers applied if scenario is active)
+		// To avoid double-application, we'll generate and then check if modifiers were already applied
+		eventsToModify = generateBaselineHistory(stream, startDate, endDate);
+	}
+	
+	// Apply scenario modifiers to the baseline events
+	// This will re-apply modifiers, but that's okay because we're explicitly applying the modifiers we want
+	const regeneratedEvents = eventsToModify.map((event) => {
+		const eventTime = new Date(event.timestamp);
+		const modifiedEvent = { ...event };
+		
+		// Apply modifiers to the event
+		applyModifiersToEvent(modifiedEvent, modifiers, externalEvents, eventTime);
+		
+		return modifiedEvent;
+	});
+	
+	return regeneratedEvents;
+}
+
+/**
+ * Apply scenario modifiers and external events to a stream event
+ * This function applies multipliers, overrides, and external event impacts to a generated event
+ * 
+ * @param event - Stream event to modify
+ * @param modifiers - Active scenario modifiers
+ * @param externalEvents - Active external events
+ * @param eventTime - Time of the event
+ */
+function applyModifiersToEvent(
+	event: StreamEvent,
+	modifiers: ScenarioModifier[],
+	externalEvents: ExternalEvent[],
+	eventTime: Date
+): void {
+	const stream = event.stream;
+	
+	// Get baseline stats for this stream
+	const baselineStats = getBaselineStatsForStream(stream);
+	if (!baselineStats) {
+		return;
+	}
+	
+	// Convert normalized value back to approximate raw value
+	// Normalized value is on 0-100 scale where 50 = mean
+	// Formula: normalized = 50 + (zScore * 15), so zScore = (normalized - 50) / 15
+	// Raw value = mean + (zScore * stdDev)
+	let rawValue: number;
+	if (event.normalizedValue !== undefined) {
+		const zScore = (event.normalizedValue - 50) / 15;
+		rawValue = baselineStats.mean + (zScore * baselineStats.stdDev);
+	} else {
+		rawValue = baselineStats.mean;
+	}
+
+	// Apply scenario modifiers
+	for (const modifier of modifiers) {
+		// Check if modifier is active for this time period
+		const modifierStartTime = new Date(modifier.startTime);
+		const modifierEndTime = modifier.duration 
+			? new Date(modifierStartTime.getTime() + parseDuration(modifier.duration))
+			: null;
+		
+		// Only apply if event time is within modifier's active period
+		if (eventTime >= modifierStartTime && (!modifierEndTime || eventTime <= modifierEndTime)) {
+			if (modifier.affectedStreams[stream]) {
+				const streamMod = modifier.affectedStreams[stream];
+				if (streamMod.multiplier !== undefined) {
+					rawValue = rawValue * streamMod.multiplier;
+				}
+				if (streamMod.override !== undefined) {
+					rawValue = streamMod.override;
+				}
+				if (streamMod.additive !== undefined) {
+					rawValue = rawValue + streamMod.additive;
+				}
+			}
+		}
+	}
+
+	// Apply external event impacts
+	for (const externalEvent of externalEvents) {
+		const eventTimestamp = new Date(externalEvent.timestamp);
+		const eventDuration = externalEvent.expectedImpact?.duration 
+			? parseDuration(externalEvent.expectedImpact.duration)
+			: 0;
+		const eventEndTime = new Date(eventTimestamp.getTime() + eventDuration);
+		
+		// Only apply if event time is within external event's impact period
+		if (eventTime >= eventTimestamp && eventTime <= eventEndTime) {
+			if (externalEvent.expectedImpact?.streams?.includes(stream)) {
+				const impact = externalEvent.expectedImpact;
+				if (impact.direction === 'increase') {
+					const magnitude = impact.magnitude === 'high' ? 1.5 : impact.magnitude === 'medium' ? 1.25 : 1.1;
+					rawValue = rawValue * magnitude;
+				} else if (impact.direction === 'decrease') {
+					const magnitude = impact.magnitude === 'high' ? 0.5 : impact.magnitude === 'medium' ? 0.75 : 0.9;
+					rawValue = rawValue * magnitude;
+				}
+			}
+		}
+	}
+
+	// Re-normalize the value
+	const { normalizedValue, anomalyFlag } = normalizeStreamValue(rawValue, baselineStats);
+	
+	event.normalizedValue = normalizedValue;
+	event.anomalyFlag = anomalyFlag;
+}
+
+/**
+ * Parse duration string (e.g., "3 hours", "6 hours") to milliseconds
+ */
+function parseDuration(duration: string): number {
+	const match = duration.match(/^(\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)$/i);
+	if (!match) {
+		return 0;
+	}
+
+	const value = parseInt(match[1], 10);
+	const unit = match[2].toLowerCase();
+
+	if (unit.startsWith('second')) {
+		return value * 1000;
+	} else if (unit.startsWith('minute')) {
+		return value * 60 * 1000;
+	} else if (unit.startsWith('hour')) {
+		return value * 60 * 60 * 1000;
+	} else if (unit.startsWith('day')) {
+		return value * 24 * 60 * 60 * 1000;
+	}
+
+	return 0;
 }
 

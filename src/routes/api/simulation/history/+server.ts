@@ -6,6 +6,8 @@ import {
 	isBaselineDataLoaded,
 	loadBaselineData
 } from '$lib/data/load-baseline.js';
+import { regenerateHistoricalWindow } from '$lib/streams/generate-history.js';
+import { getScenarioEngine } from '$lib/scenarios/scenario-engine.js';
 import type { StreamEvent } from '$lib/types';
 
 /**
@@ -41,32 +43,59 @@ export const GET: RequestHandler = async ({ url }) => {
 		await loadBaselineData();
 	}
 
-	// Get baseline data from memory
-	const allStreamEvents = getBaselineStreamEvents();
-	const statistics = getBaselineStatistics();
+	// Check if a scenario is active
+	const engine = getScenarioEngine();
+	const hasActiveScenario = engine.hasActiveScenario();
+	const activeModifiers = hasActiveScenario ? engine.getActiveModifiers() : [];
+	const activeEvents = hasActiveScenario ? engine.getActiveEvents() : [];
 
 	// Determine which streams to return
+	const allStreamEvents = getBaselineStreamEvents();
 	const requestedStreams = streamsParam
 		? streamsParam.split(',').map((s) => s.trim())
 		: Object.keys(allStreamEvents); // Default to all streams if not specified
 
 	// Filter events by time range and stream
 	const history: Record<string, { events: StreamEvent[]; baseline: any }> = {};
+	const statistics = getBaselineStatistics();
 
 	for (const stream of requestedStreams) {
-		const streamEvents = allStreamEvents[stream] || [];
+		let streamEvents: StreamEvent[];
 
-		// Filter events by time range
-		const filteredEvents = streamEvents.filter((event) => {
-			const eventTime = new Date(event.timestamp);
-			return eventTime >= start && eventTime <= end;
-		});
+		if (hasActiveScenario && activeModifiers.length > 0) {
+			// Get baseline events for this stream and time range
+			const baselineStreamEvents = allStreamEvents[stream] || [];
+			const baselineEventsInRange = baselineStreamEvents.filter((event) => {
+				const eventTime = new Date(event.timestamp);
+				return eventTime >= start && eventTime <= end;
+			});
+			
+			// Regenerate historical data with scenario modifications applied
+			// Pass baseline events to avoid double-generation
+			streamEvents = regenerateHistoricalWindow(
+				stream,
+				start,
+				end,
+				activeModifiers,
+				activeEvents,
+				baselineEventsInRange
+			);
+		} else {
+			// Use baseline data
+			const baselineStreamEvents = allStreamEvents[stream] || [];
+			
+			// Filter events by time range
+			streamEvents = baselineStreamEvents.filter((event) => {
+				const eventTime = new Date(event.timestamp);
+				return eventTime >= start && eventTime <= end;
+			});
+		}
 
 		// Get baseline statistics for this stream
 		const baseline = statistics.streams[stream] || null;
 
 		history[stream] = {
-			events: filteredEvents,
+			events: streamEvents,
 			baseline
 		};
 	}
