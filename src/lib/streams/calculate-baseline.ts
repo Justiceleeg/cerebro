@@ -1,5 +1,6 @@
-import type { StreamBaseline } from '$lib/types';
+import type { StreamBaseline, BaselineStatistics } from '$lib/types';
 import type { StreamEvent } from '$lib/types';
+import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 
 /**
  * Calculate baseline statistics from historical stream events
@@ -32,10 +33,29 @@ export function calculateBaseline(streamName: string, events: StreamEvent[]): St
 	const p90 = sorted[Math.floor(sorted.length * 0.9)] || max;
 	const p95 = sorted[Math.floor(sorted.length * 0.95)] || max;
 
-	// Calculate weekday/weekend averages (simplified)
-	// For minimal implementation, use the mean for both
-	const weekdayAvg = mean;
-	const weekendAvg = mean * 1.35; // ~35% more on weekends
+	// Calculate weekday/weekend averages from actual events
+	const weekdayValues: number[] = [];
+	const weekendValues: number[] = [];
+	
+	for (const event of events) {
+		const date = new Date(event.timestamp);
+		const dayOfWeek = date.getDay();
+		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+		const value = event.normalizedValue ?? 50;
+		
+		if (isWeekend) {
+			weekendValues.push(value);
+		} else {
+			weekdayValues.push(value);
+		}
+	}
+	
+	const weekdayAvg = weekdayValues.length > 0
+		? weekdayValues.reduce((sum, v) => sum + v, 0) / weekdayValues.length
+		: mean;
+	const weekendAvg = weekendValues.length > 0
+		? weekendValues.reduce((sum, v) => sum + v, 0) / weekendValues.length
+		: mean * 1.35; // Fallback to ~35% more on weekends
 
 	return {
 		name: streamName,
@@ -57,6 +77,32 @@ export function calculateBaseline(streamName: string, events: StreamEvent[]): St
 			trend: 'stable', // Minimal implementation
 			seasonality: 'none' // Minimal implementation
 		}
+	};
+}
+
+/**
+ * Calculate baseline statistics for all streams
+ * @param allStreamEvents - Map of stream name to events
+ * @returns BaselineStatistics with all stream baselines
+ */
+export function calculateAllStreamBaselines(
+	allStreamEvents: Record<string, StreamEvent[]>
+): BaselineStatistics {
+	const streams: Record<string, StreamBaseline> = {};
+	
+	// Get all stream names from baseline metrics
+	const streamNames = Object.keys(baselineMetrics.streamBaselines);
+	
+	for (const streamName of streamNames) {
+		const events = allStreamEvents[streamName] || [];
+		if (events.length > 0) {
+			streams[streamName] = calculateBaseline(streamName, events);
+		}
+	}
+	
+	return {
+		calculatedFrom: 'historical_data',
+		streams
 	};
 }
 

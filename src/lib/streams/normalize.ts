@@ -3,6 +3,8 @@
  * Converts raw stream values to 0-100 scale based on baseline statistics
  */
 
+import baselineMetrics from '$lib/server/config/baseline-metrics.json';
+
 interface BaselineStats {
 	mean: number;
 	stdDev: number;
@@ -22,8 +24,9 @@ export function normalizeStreamValue(
 ): { normalizedValue: number; anomalyFlag: 'normal' | 'warning' | 'critical' } {
 	const { mean, stdDev, min, max } = baselineStats;
 
-	// Calculate z-score
-	const zScore = (rawValue - mean) / stdDev;
+	// Calculate z-score (handle division by zero)
+	const safeStdDev = stdDev || 1; // Avoid division by zero
+	const zScore = (rawValue - mean) / safeStdDev;
 
 	// Normalize to 0-100 scale where 50 = mean
 	// Using a sigmoid-like function to map z-scores to 0-100
@@ -49,17 +52,40 @@ export function normalizeStreamValue(
 }
 
 /**
+ * Get baseline stats for any stream
+ * Uses baseline metrics from configuration
+ */
+export function getBaselineStatsForStream(stream: string): BaselineStats {
+	const streamBaseline = baselineMetrics.streamBaselines[stream as keyof typeof baselineMetrics.streamBaselines];
+	
+	if (!streamBaseline) {
+		// Fallback for unknown streams
+		return {
+			mean: 1000,
+			stdDev: 200,
+			min: 500,
+			max: 2000
+		};
+	}
+
+	const eventsPerDay = streamBaseline.eventsPerDay || 1000;
+	const stdDev = eventsPerDay * 0.125; // ~12.5% variance
+	const min = eventsPerDay * 0.625; // ~62.5% of mean
+	const max = eventsPerDay * 1.5; // ~150% of mean
+
+	return {
+		mean: eventsPerDay,
+		stdDev,
+		min,
+		max
+	};
+}
+
+/**
  * Get hardcoded baseline stats for customer.tutor.search
- * TODO: Replace with calculated baseline stats in future slices
+ * @deprecated Use getBaselineStatsForStream('customer.tutor.search') instead
  */
 export function getBaselineStatsForCustomerTutorSearch(): BaselineStats {
-	// Hardcoded baseline stats for customer.tutor.search
-	// Based on 8000 eventsPerDay from baseline-metrics.json
-	return {
-		mean: 8000,
-		stdDev: 1000, // ~12.5% variance
-		min: 5000,
-		max: 12000
-	};
+	return getBaselineStatsForStream('customer.tutor.search');
 }
 

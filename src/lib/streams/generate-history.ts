@@ -1,9 +1,10 @@
 import type { StreamEvent } from '$lib/types';
 import { StreamGenerator } from './stream-generator.js';
+import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 
 /**
- * Generate minimal historical baseline data for a stream
- * Generates 1 day of data with 2 intervals (12-hour blocks)
+ * Generate historical baseline data for any stream
+ * Generates 1 day of data with intervals based on stream frequency
  */
 export function generateBaselineHistory(
 	stream: string,
@@ -13,33 +14,37 @@ export function generateBaselineHistory(
 	const events: StreamEvent[] = [];
 	const generator = new StreamGenerator();
 
-	// For now, only support customer.tutor.search
-	if (stream !== 'customer.tutor.search') {
+	// Get baseline metrics for this stream
+	const streamBaseline = baselineMetrics.streamBaselines[stream as keyof typeof baselineMetrics.streamBaselines];
+	if (!streamBaseline) {
+		// Unknown stream, return empty
 		return events;
 	}
 
-	// Calculate number of 12-hour intervals
-	const intervalMs = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+	// Calculate interval based on stream frequency
+	// High frequency streams: 1 hour intervals
+	// Medium frequency streams: 6 hour intervals
+	// Low frequency streams: 12 hour intervals
+	const eventsPerDay = streamBaseline.eventsPerDay || 1000;
+	let intervalHours = 12; // Default to 12 hours
+	
+	if (eventsPerDay > 10000) {
+		intervalHours = 1; // High frequency: 1 hour
+	} else if (eventsPerDay > 1000) {
+		intervalHours = 6; // Medium frequency: 6 hours
+	} else {
+		intervalHours = 12; // Low frequency: 12 hours
+	}
+
+	const intervalMs = intervalHours * 60 * 60 * 1000;
 	let currentTime = new Date(startDate);
 
-	// Generate events for each 12-hour interval
+	// Generate events for each interval
 	while (currentTime < endDate) {
 		// Generate an event for this interval
-		const event = generator.generateCustomerTutorSearch();
+		const event = generator.generateEvent(stream, currentTime.toISOString());
 
-		// Set the timestamp to the interval time
-		event.timestamp = currentTime.toISOString();
-
-		// Apply weekday/weekend variance
-		const dayOfWeek = currentTime.getDay();
-		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-		// Adjust normalized value based on weekday/weekend
-		// Weekends have ~35% more activity (from baseline-metrics.json)
-		if (isWeekend && event.normalizedValue !== undefined) {
-			event.normalizedValue = Math.min(100, event.normalizedValue * 1.35);
-		}
-
+		// The event already has the correct timestamp and patterns applied
 		events.push(event);
 
 		// Move to next interval
@@ -47,5 +52,27 @@ export function generateBaselineHistory(
 	}
 
 	return events;
+}
+
+/**
+ * Generate historical data for all streams
+ * @param startDate - Start date for historical data
+ * @param endDate - End date for historical data
+ * @returns Map of stream name to events
+ */
+export function generateAllStreamsHistory(
+	startDate: Date,
+	endDate: Date
+): Record<string, StreamEvent[]> {
+	const allStreams: Record<string, StreamEvent[]> = {};
+	
+	// Get all stream names from baseline metrics
+	const streamNames = Object.keys(baselineMetrics.streamBaselines);
+	
+	for (const stream of streamNames) {
+		allStreams[stream] = generateBaselineHistory(stream, startDate, endDate);
+	}
+	
+	return allStreams;
 }
 
