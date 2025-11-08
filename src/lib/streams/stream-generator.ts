@@ -4,6 +4,7 @@ import baselineMetrics from '$lib/server/config/baseline-metrics.json';
 import { normalizeStreamValue, getBaselineStatsForStream } from './normalize.js';
 import { getScenarioEngine } from '$lib/scenarios/scenario-engine.js';
 import { getRelationshipEngine } from './relationship-engine.js';
+import { getCorrelationTracker } from '$lib/correlations/correlation-tracker.js';
 
 /**
  * StreamGenerator class
@@ -107,6 +108,10 @@ export class StreamGenerator {
 
 		// Process event through relationship engine to trigger chains and cascades
 		relationshipEngine.processEvent(event);
+
+		// Record stream change with correlation tracker
+		const correlationTracker = getCorrelationTracker();
+		correlationTracker.recordStreamChange(event);
 
 		return event;
 	}

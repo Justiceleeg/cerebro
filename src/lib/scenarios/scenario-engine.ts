@@ -1,4 +1,5 @@
 import type { SimulationState, ScenarioModifier, ExternalEvent, StreamModification } from '$lib/types';
+import { getCorrelationTracker } from '$lib/correlations/correlation-tracker.js';
 
 /**
  * ScenarioEngine class
@@ -233,6 +234,12 @@ export class ScenarioEngine {
 		this.state.activeEvents = events;
 		this.state.historicalMode = 'modified';
 		this.state.lastModified = new Date().toISOString();
+
+		// Register events with correlation tracker
+		const correlationTracker = getCorrelationTracker();
+		for (const event of events) {
+			correlationTracker.registerEvent(event);
+		}
 	}
 
 	/**
@@ -249,6 +256,12 @@ export class ScenarioEngine {
 		activeModifier.status = 'settling';
 		activeModifier.settlementStartTime = new Date().toISOString();
 		this.state.lastModified = new Date().toISOString();
+
+		// Calculate final correlations for events when scenario stops
+		const correlationTracker = getCorrelationTracker();
+		for (const event of this.state.activeEvents) {
+			correlationTracker.calculateCorrelations(event.id);
+		}
 
 		return true;
 	}
@@ -269,6 +282,12 @@ export class ScenarioEngine {
 	 * Reset to baseline
 	 */
 	reset(): void {
+		// Unregister events from correlation tracker before resetting
+		const correlationTracker = getCorrelationTracker();
+		for (const event of this.state.activeEvents) {
+			correlationTracker.unregisterEvent(event.id);
+		}
+
 		this.state = {
 			baselineState: 'normal',
 			activeModifiers: [],

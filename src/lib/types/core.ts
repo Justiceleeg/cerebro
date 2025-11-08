@@ -118,3 +118,20 @@ export interface SimulationState {
 	lastModified: string; // ISO 8601
 }
 
+/**
+ * Correlation data for a single event-stream pair
+ */
+export interface CorrelationData {
+	eventId: string;
+	stream: string;
+	strength: number; // -1 to 1 (Pearson correlation coefficient)
+	direction: 'positive' | 'negative' | 'none';
+	confidence: number; // 0 to 1 (statistical significance)
+	sampleSize: number; // Number of data points used
+	startTime: string; // ISO 8601
+	endTime: string; // ISO 8601
+	baselineMean: number; // Mean value before event
+	eventMean: number; // Mean value during event
+	changeMagnitude: number; // Percentage change
+}
+
