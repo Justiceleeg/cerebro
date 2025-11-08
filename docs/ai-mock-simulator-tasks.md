@@ -252,25 +252,26 @@ Building the backend mock data generation service that simulates 50+ marketplace
 ### Slice 8: Full Historical Data (Day 5-6)
 **Goal**: Generate full 30-day historical baseline.
 
-- [ ] Expand `generateBaselineHistory()` to full 30 days
+- [x] Expand `generateBaselineHistory()` to full 30 days
   - Generate 30 days × 2 intervals = 60 data points per stream
   - Apply all patterns (academic calendar, weekday/weekend, time-of-day)
   - Include realistic anomalies
   
-- [ ] Generate baseline external events for 30-day period
+- [x] Generate baseline external events for 30-day period
   - 2-5 events per day (60-150 events total)
   - Distributed realistically
   
-- [ ] Build data loader for app startup
+- [x] Build data loader for app startup
   - Load baseline files into memory
   - Create efficient in-memory structures
   - Pre-calculate aggregations
   
-- [ ] Update `GET /api/simulation/history` endpoint
+- [x] Update `GET /api/simulation/history` endpoint
   - Return full 30-day historical data
   - Support filtering by stream
   - Test: Request 7-day window, verify data quality
   - **Testable**: ✅ Can test via API
+  - **Status**: ✅ Complete - 30-day baseline data loaded into memory on startup
 
 ---
 

@@ -1,15 +1,20 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { generateBaselineHistory } from '$lib/streams/generate-history.js';
-import { calculateBaseline } from '$lib/streams/calculate-baseline.js';
+import {
+	getBaselineStreamEvents,
+	getBaselineStatistics,
+	isBaselineDataLoaded,
+	loadBaselineData
+} from '$lib/data/load-baseline.js';
+import type { StreamEvent } from '$lib/types';
 
 /**
  * GET /api/simulation/history
- * Returns historical stream data for a time range
+ * Returns historical stream data for a time range from in-memory baseline data
  * Query parameters:
  *   - start: ISO 8601 timestamp (required)
  *   - end: ISO 8601 timestamp (required)
- *   - streams: comma-separated stream names (optional, defaults to customer.tutor.search)
+ *   - streams: comma-separated stream names (optional, defaults to all streams)
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const startParam = url.searchParams.get('start');
@@ -31,18 +36,37 @@ export const GET: RequestHandler = async ({ url }) => {
 		return json({ error: 'Start date must be before end date' }, { status: 400 });
 	}
 
-	// Default to customer.tutor.search if no streams specified
-	const streams = streamsParam ? streamsParam.split(',') : ['customer.tutor.search'];
+	// Ensure baseline data is loaded
+	if (!isBaselineDataLoaded()) {
+		await loadBaselineData();
+	}
 
-	// Generate historical data for each stream
-	const history: Record<string, any> = {};
+	// Get baseline data from memory
+	const allStreamEvents = getBaselineStreamEvents();
+	const statistics = getBaselineStatistics();
 
-	for (const stream of streams) {
-		const events = generateBaselineHistory(stream, start, end);
-		const baseline = calculateBaseline(stream, events);
+	// Determine which streams to return
+	const requestedStreams = streamsParam
+		? streamsParam.split(',').map((s) => s.trim())
+		: Object.keys(allStreamEvents); // Default to all streams if not specified
+
+	// Filter events by time range and stream
+	const history: Record<string, { events: StreamEvent[]; baseline: any }> = {};
+
+	for (const stream of requestedStreams) {
+		const streamEvents = allStreamEvents[stream] || [];
+
+		// Filter events by time range
+		const filteredEvents = streamEvents.filter((event) => {
+			const eventTime = new Date(event.timestamp);
+			return eventTime >= start && eventTime <= end;
+		});
+
+		// Get baseline statistics for this stream
+		const baseline = statistics.streams[stream] || null;
 
 		history[stream] = {
-			events,
+			events: filteredEvents,
 			baseline
 		};
 	}
@@ -50,7 +74,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	return json({
 		start: start.toISOString(),
 		end: end.toISOString(),
-		streams,
+		streams: requestedStreams,
 		data: history
 	});
 };

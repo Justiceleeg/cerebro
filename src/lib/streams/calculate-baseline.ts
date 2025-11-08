@@ -91,7 +91,10 @@ export function calculateAllStreamBaselines(
 	const streams: Record<string, StreamBaseline> = {};
 	
 	// Get all stream names from baseline metrics
-	const streamNames = Object.keys(baselineMetrics.streamBaselines);
+	// Filter out non-stream keys like _documentation, metadata, etc.
+	const streamNames = Object.keys(baselineMetrics.streamBaselines).filter(
+		(key) => !key.startsWith('_') && key !== 'metadata'
+	);
 	
 	for (const streamName of streamNames) {
 		const events = allStreamEvents[streamName] || [];

@@ -1,5 +1,15 @@
 import type { Handle } from '@sveltejs/kit';
 import { initWebSocketServer } from '$lib/websocket/server.js';
+import { loadBaselineData } from '$lib/data/load-baseline.js';
+
+// Initialize baseline data on module load (runs once on startup)
+// This is non-blocking - the endpoint will wait if needed
+let baselineDataLoading: Promise<void> | null = null;
+if (!baselineDataLoading) {
+	baselineDataLoading = loadBaselineData().catch((error) => {
+		console.error('Failed to load baseline data:', error);
+	});
+}
 
 /**
  * SvelteKit handle hook
