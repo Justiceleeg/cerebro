@@ -354,6 +354,12 @@ Building the backend mock data generation service that simulates 50+ marketplace
   - Only enabled when scenario is active
   - **Testable**: ✅ Can test via browser UI
 
+**TESTING CHECKPOINT**: After completing Slice 12, test all unarchived openspec changes:
+- ✅ **p2s9 (WebSocket Subscriptions)**: Test subscription patterns (`*`, `customer.*`, specific streams), heartbeat/keepalive
+- ✅ **p2s10 (Scenario Settling)**: Test scenario lifecycle (active → settling → settled), reset endpoint, stop endpoint
+- ✅ **p2s11 (Relationship Enforcement)**: Test event chains (booking.requested → confirmed/declined), cascading effects, temporal dependencies
+- Use Admin UI to activate scenarios and observe WebSocket streams with subscriptions
+
 ---
 
 ### Slice 13: Expand to All Scenarios (Day 7-8)
