@@ -14,8 +14,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint .",
-		"test:websocket": "node test-websocket-enhancements.js"
+		"lint": "prettier --check . && eslint ."
 	},
 	"devDependencies": {
 		"@ai-sdk/openai": "^2.0.64",
