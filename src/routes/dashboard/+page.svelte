@@ -1,6 +1,13 @@
 <script lang="ts">
+	import TimeSeriesChart from '$lib/components/dashboard/TimeSeriesChart.svelte';
+	import { sampleChartData } from '$lib/data/sample-chart-data.js';
+
 	// Hardcoded connection status for now
 	const connectionStatus = 'Connected';
+
+	// Use sample data for now
+	const chartData = sampleChartData;
+	const streamName = 'customer.tutor.search';
 </script>
 
 <div class="container mx-auto p-6 max-w-7xl">
@@ -26,8 +33,8 @@
 			<!-- Chart Section -->
 			<section class="bg-white rounded-lg shadow p-6">
 				<h2 class="text-xl font-semibold mb-4">Time Series Chart</h2>
-				<div class="h-64 bg-gray-50 rounded flex items-center justify-center text-gray-400">
-					<p>Chart placeholder - will display normalized stream data</p>
+				<div class="h-96">
+					<TimeSeriesChart {streamName} data={chartData} />
 				</div>
 			</section>
 
