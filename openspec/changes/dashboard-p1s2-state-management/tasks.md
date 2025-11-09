@@ -1,0 +1,25 @@
+## 1. State Management Setup
+- [ ] 1.1 Create WebSocket connection store (`lib/stores/websocket.ts`):
+  - [ ] Connection state (connected/disconnected/reconnecting)
+  - [ ] Subscription management (topics array)
+  - [ ] Reconnection logic
+  - [ ] Error handling
+- [ ] 1.2 Create stream data store (`lib/stores/streams.ts`):
+  - [ ] Stream events aggregation (Map<streamName, events[]>)
+  - [ ] Historical data storage
+  - [ ] Real-time update logic
+  - [ ] Normalized value calculations
+- [ ] 1.3 Create UI state store (`lib/stores/ui.ts`):
+  - [ ] Filter state (status, domain, event types)
+  - [ ] Selection state (selected streams, selected events)
+  - [ ] Time range state (start, end, preset)
+- [ ] 1.4 Create chart state store (`lib/stores/chart.ts`):
+  - [ ] Zoom level state
+  - [ ] Pan position state
+  - [ ] Selected streams for chart display
+  - [ ] Event markers visibility
+- [ ] 1.5 Create recommendations store (`lib/stores/recommendations.ts`):
+  - [ ] Recommendations array (active, resolved)
+  - [ ] Priority filtering
+  - [ ] Action status tracking
+

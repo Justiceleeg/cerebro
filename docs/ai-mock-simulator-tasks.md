@@ -397,6 +397,91 @@ Building the backend mock data generation service that simulates 50+ marketplace
 
 ---
 
+## Phase 2.5: WebSocket Protocol Enhancements (Day 6-7)
+**Goal**: Add missing WebSocket features for production readiness and API contract compliance.
+
+**Estimated Time**: 6-8 hours
+
+**Context**: These features complete the WebSocket protocol to match the API contract specification. They improve performance (batching), reliability (catchup), and efficiency (unsubscribe, anomalies pattern).
+
+### 2.5.1 Unsubscribe Message Handler
+**Complexity**: Low (30-60 min)
+
+- [ ] Implement `unsubscribe` message handler
+  - Add handler for `{ type: "unsubscribe", topics: string[] }` message in WebSocket message router
+  - Remove topics from client's `subscriptions` array
+  - Update stream intervals by calling `setupStreamIntervals()` to remove unsubscribed streams
+  - Send confirmation: `{ type: "unsubscribed", topics: string[] }`
+  - Test: Subscribe to multiple streams, unsubscribe from some, verify only remaining streams are received
+  - **Testable**: ✅ Can test via WebSocket client
+  - **Location**: `src/lib/websocket/server.ts`
+
+### 2.5.2 Anomalies Topic Pattern
+**Complexity**: Low (30-60 min)
+
+- [ ] Implement `anomalies` special topic pattern
+  - Update `matchesSubscription()` function to handle `"anomalies"` pattern
+  - Check `event.anomalyFlag === 'warning' || event.anomalyFlag === 'critical'`
+  - Filter events before sending based on anomaly flag when pattern matches
+  - Test: Subscribe to `"anomalies"`, verify only warning/critical events are received
+  - Test: Subscribe to `"customer.*"` and `"anomalies"`, verify both patterns work together
+  - **Testable**: ✅ Can test via WebSocket client
+  - **Location**: `src/lib/websocket/server.ts` - `matchesSubscription()` and event sending logic
+
+### 2.5.3 Batch Message Type
+**Complexity**: Medium (2-3 hours)
+
+- [ ] Implement event batching for high-frequency streams
+  - Add `eventBuffer: StreamEvent[]` to `ClientState` interface
+  - Buffer events instead of sending immediately when generated
+  - Add batch timer (100ms interval) per client connection
+  - Flush buffer every 100ms: send `{ type: "batch", events: StreamEvent[] }`
+  - Handle empty batches (don't send if buffer is empty)
+  - Send remaining buffered events on disconnect (cleanup)
+  - Test: Subscribe to high-frequency streams (e.g., `api.request.log`), verify events are batched
+  - Test: Verify batch messages contain multiple events
+  - Test: Verify no events are lost during batching
+  - **Testable**: ✅ Can test via WebSocket client (observe message types)
+  - **Location**: `src/lib/websocket/server.ts` - `ClientState` interface and event sending logic
+  - **Performance Impact**: Reduces WebSocket overhead for high-frequency streams (11+ events/second)
+
+### 2.5.4 Catchup / LastTimestamp Support
+**Complexity**: Medium-High (3-4 hours)
+
+- [ ] Implement recent event buffer for catchup
+  - Add global recent event buffer: `Map<stream, StreamEvent[]>` or time-based structure
+  - Store events in buffer when generated (limit: last 5 minutes or last 1000 events per stream)
+  - Add buffer cleanup mechanism (remove events older than 5 minutes, run every minute)
+  - Estimate memory: ~50 streams × ~10 events/min × 5 min = ~2500 events ≈ 1.25MB (acceptable)
+
+- [ ] Implement `lastTimestamp` parameter in subscribe
+  - Update `handleSubscribe()` to check for optional `lastTimestamp` parameter
+  - Parse `lastTimestamp` as ISO 8601 timestamp
+  - Query buffer for events after `lastTimestamp` matching subscription patterns
+  - Handle edge case: if `lastTimestamp` is too old (beyond buffer), return empty catchup or error
+
+- [ ] Implement `catchup` message type
+  - Send `{ type: "catchup", events: StreamEvent[], catchUpEndTime: string }` message
+  - `catchUpEndTime` should be current time (ISO 8601) when catchup completes
+  - Send catchup message immediately after subscription confirmation
+  - Test: Subscribe with `lastTimestamp` from 2 minutes ago, verify catchup events are received
+  - Test: Disconnect, wait 3 minutes, reconnect with `lastTimestamp`, verify gap is filled
+  - Test: Subscribe with very old `lastTimestamp`, verify empty catchup or error
+  - **Testable**: ✅ Can test via WebSocket client
+  - **Location**: `src/lib/websocket/server.ts` - global buffer, `handleSubscribe()` function
+  - **Reliability Impact**: Critical for production (fills gaps after reconnection, no data loss)
+
+**Notes**:
+- These features align with API contract expectations (`docs/API_CONTRACT.md`)
+- All features are backward compatible (optional parameters/patterns)
+- Batch reduces bandwidth/CPU for high-frequency streams
+- Catchup is essential for reliable reconnection (no data gaps)
+- Unsubscribe and anomalies pattern improve efficiency for focused monitoring
+
+**Status**: ⏳ Pending - Required before frontend development begins
+
+---
+
 ## Phase 3: Testing & Refinement (Days 8-9)
 
 ### 3.1 Data Quality Validation
@@ -502,12 +587,13 @@ Building the backend mock data generation service that simulates 50+ marketplace
 - **Days 2-4**: Vertical slices 1-6 (minimal testable features)
 - **Days 4-6**: Vertical slices 7-10 (expand to full functionality)
 - **Days 6-8**: Vertical slices 11-15 (advanced features)
+- **Day 7**: Phase 2.5 - WebSocket Protocol Enhancements (6-8 hours)
 - **Days 8-9**: Testing and refinement
 - **Days 9-10**: Documentation and deployment
 
-**Total Estimated Time**: 10 days for full feature set
+**Total Estimated Time**: 10-11 days for full feature set (includes Phase 2.5)
 
-**MVP Timeline**: 7-8 days (through Slice 12)
+**MVP Timeline**: 7-8 days (through Slice 12, before Phase 2.5)
 
 ---
 

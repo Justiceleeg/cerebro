@@ -76,6 +76,7 @@ After deployment, create separate PR to:
 - Always check if capability already exists
 - Prefer modifying existing specs over creating duplicates
 - Use `openspec show [spec]` to review current state
+- **For backend/frontend integration specs**: Always reference `docs/API_CONTRACT.md` as the source of truth for API endpoints, WebSocket protocol, and data types
 - If request is ambiguous, ask 1–2 clarifying questions before scaffolding
 
 ### Search Guidance

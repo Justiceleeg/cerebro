@@ -4,7 +4,7 @@
 
 **Status**: Contract - DO NOT BREAK without coordination
 
-**Last Updated**: 2025-01-16
+**Last Updated**: 2025-01-16 (Updated ping/pong to use WebSocket protocol-level)
 
 ---
 
@@ -49,12 +49,9 @@ This document defines the complete API contract between the AI Mock Simulator (b
 }
 ```
 
-**Ping** (heartbeat response):
-```typescript
-{
-  type: "pong"
-}
-```
+**Pong** (heartbeat response):
+- Client responds to server's WebSocket protocol-level ping with WebSocket protocol-level pong
+- No JSON message required - handled at WebSocket protocol level
 
 #### Server → Client Messages
 
@@ -75,11 +72,8 @@ This document defines the complete API contract between the AI Mock Simulator (b
 ```
 
 **Ping** (heartbeat):
-```typescript
-{
-  type: "ping"
-}
-```
+- Server sends WebSocket protocol-level ping (not a JSON message)
+- Client should respond with WebSocket protocol-level pong automatically
 
 **Subscribed** (confirmation):
 ```typescript
@@ -121,9 +115,9 @@ This document defines the complete API contract between the AI Mock Simulator (b
 
 ### Heartbeat
 
-- Server sends `ping` every 30 seconds
-- Client must respond with `pong` within 10 seconds
-- Server disconnects if no `pong` received within 90 seconds
+- Server sends WebSocket protocol-level `ping` every 30 seconds
+- Client must respond with WebSocket protocol-level `pong` automatically
+- Server disconnects if no `pong` received within 60 seconds (slightly stricter than typical 90 seconds for better connection health)
 
 ---
 
