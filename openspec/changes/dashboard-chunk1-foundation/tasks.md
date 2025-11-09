@@ -1,0 +1,83 @@
+## 1. Project Setup (Phase 1.1)
+- [ ] 1.1 Verify SvelteKit project is initialized with TypeScript (already done with simulator)
+- [ ] 1.2 Install frontend dependencies:
+  - [ ] Install `echarts@^5.5.0`
+  - [ ] Install `@ai-sdk/openai@^2.0.64`
+  - [ ] Install `ai@^5.0.0`
+  - [ ] Install `shadcn-svelte` (check latest version)
+  - [ ] Install `lucide-svelte` (if not included with shadcn)
+- [ ] 1.3 Set up frontend project structure:
+  - [ ] Create `/routes/dashboard` directory
+  - [ ] Create `/lib/components/dashboard` directory
+  - [ ] Create `/lib/components/ui` directory
+  - [ ] Create `/lib/stores` directory
+  - [ ] Create `/lib/ai-contextualizer` directory
+  - [ ] Create `/lib/utils` directory (if not exists)
+- [ ] 1.4 Initialize shadcn-svelte components (run shadcn init if needed)
+
+## 2. State Management Setup (Phase 1.2)
+- [ ] 2.1 Create WebSocket connection store (`lib/stores/websocket.ts`):
+  - [ ] Connection state (connected/disconnected/reconnecting)
+  - [ ] Subscription management (topics array)
+  - [ ] Reconnection logic
+  - [ ] Error handling
+- [ ] 2.2 Create stream data store (`lib/stores/streams.ts`):
+  - [ ] Stream events aggregation (Map<streamName, events[]>)
+  - [ ] Historical data storage
+  - [ ] Real-time update logic
+  - [ ] Normalized value calculations
+- [ ] 2.3 Create UI state store (`lib/stores/ui.ts`):
+  - [ ] Filter state (status, domain, event types)
+  - [ ] Selection state (selected streams, selected events)
+  - [ ] Time range state (start, end, preset)
+- [ ] 2.4 Create chart state store (`lib/stores/chart.ts`):
+  - [ ] Zoom level state
+  - [ ] Pan position state
+  - [ ] Selected streams for chart display
+  - [ ] Event markers visibility
+- [ ] 2.5 Create recommendations store (`lib/stores/recommendations.ts`):
+  - [ ] Recommendations array (active, resolved)
+  - [ ] Priority filtering
+  - [ ] Action status tracking
+
+## 3. Type Definitions (Phase 1.3)
+- [ ] 3.1 Import and re-export backend type definitions from `src/lib/types/core.ts` (matching `docs/API_CONTRACT.md`):
+  - [ ] Import `StreamEvent` from `$lib/types/core`
+  - [ ] Import `ExternalEvent` from `$lib/types/core`
+  - [ ] Import `ScenarioModifier` from `$lib/types/core`
+  - [ ] Import `StreamBaseline` from `$lib/types/core`
+  - [ ] Import `SimulationState` from `$lib/types/core`
+  - [ ] Import `StreamModification` from `$lib/types/core`
+  - [ ] Import `CascadeRule` from `$lib/types/core`
+  - [ ] Verify all types match `docs/API_CONTRACT.md` exactly
+- [ ] 3.2 Create dashboard-specific types:
+  - [ ] `HeatmapCell` interface (stream name, normalized value, status, domain)
+  - [ ] `Recommendation` interface (priority, title, description, actions, confidence)
+  - [ ] `ChartSeries` interface (stream name, data points, color)
+  - [ ] `ChartDataPoint` interface (timestamp, value, normalized)
+  - [ ] `WebSocketMessage` union type (subscribe, event, batch, error, etc.)
+  - [ ] `FilterState` interface (status, domain, event types, time range)
+  - [ ] `TimeRange` interface (start, end, preset)
+- [ ] 3.3 Create utility types:
+  - [ ] `StreamName` type (union of all stream names)
+  - [ ] `EventType` type (union of event types)
+  - [ ] `Priority` type (union of priority levels)
+- [ ] 3.4 Export all types from `lib/types/dashboard.ts`
+- [ ] 3.5 Update `lib/types/index.ts` to export dashboard types
+
+## 4. Minimal Dashboard Page (Slice 1)
+- [ ] 4.1 Create `/routes/dashboard/+page.svelte` (main operations dashboard):
+  - [ ] Basic layout with header
+  - [ ] Placeholder sections for chart, heatmap, events, recommendations
+  - [ ] Hardcoded connection status: "Connected"
+  - [ ] Basic styling with shadcn-svelte components
+- [ ] 4.2 (Optional) Update root `/` route:
+  - [ ] Option A: Redirect to `/dashboard`
+  - [ ] Option B: Simple landing page with links to `/dashboard` and `/admin`
+  - [ ] Option C: Leave as-is (default SvelteKit welcome page)
+- [ ] 4.3 Test dashboard route:
+  - [ ] Navigate to `/dashboard`, verify page loads
+  - [ ] Verify layout structure is correct
+  - [ ] Verify connection status displays
+  - [ ] Note: `/admin` route already exists and works (no testing needed)
+
