@@ -5,4 +5,5 @@
 
 export * from './core.js';
 export * from './stream-events.js';
+export * from './dashboard.js';
 
