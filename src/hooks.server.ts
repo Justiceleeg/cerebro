@@ -1,6 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
-import { initWebSocketServer } from '$lib/websocket/server.js';
+import { initWebSocketServer, getWebSocketServer } from '$lib/websocket/server.js';
 import { loadBaselineData } from '$lib/data/load-baseline.js';
+
+// Export WebSocket server functions so they can be imported by server.js
+export { initWebSocketServer, getWebSocketServer };
 
 // Initialize baseline data on module load (runs once on startup)
 // This is non-blocking - the endpoint will wait if needed
